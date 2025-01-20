@@ -2,7 +2,7 @@
 
 This repository contains my personal dotfiles for configuring various tools and applications on macOS and Linux systems. These dotfiles are managed using [GNU Stow](https://www.gnu.org/software/stow/), which simplifies the process of symlinking configuration files.
 
-![My MacOS Rice](assets/Screenshot-LCS.Dev.png)
+![My MacOS Rice](assets/Screenshot-LCS.Dev.webp)
 
 ## Table of Contents
 
