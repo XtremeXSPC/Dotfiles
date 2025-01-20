@@ -76,13 +76,14 @@ yabai -m rule --add label="About This Mac" app="System Information" title="About
 # +++++++++++++++++++++++++++++ JetBrains IDEs +++++++++++++++++++++++++++++++ #
 
 # Exclude JetBrains IDEs specific windows from being managed
-JETBRAINS_IDEs="CLion|IntelliJ IDEA|PyCharm|WebStorm|RustRover-EAP"
+JETBRAINS_IDEs="CLion|CLion-EAP|IntelliJ IDEA|IntelliJ IDEA-EAP|PyCharm|PyCharm-EAP| \
+                WebStorm|WebStorm-EAP|RustRover|RustRover-EAP"
 
 yabai -m rule --add \
     app="^($JETBRAINS_IDEs)$" \
     title="^(.*Configurations?.*|.*Debug.*|.*Delete.*|.*devices?.*|.*Files?.*|.*Installations?.*|.*Errors?.*| \
-             .*Lines?.*|.*Log.*|.*JetBrains.*|.*Move.*|.*Plugins?.*|.*Projects?.*|.*Rename.*|.*Resources?.*|  \
-             .*Tip of the Day.*|.*Updates?.*|.*Welcome.*)$" \
+             .*Licenses?.*|.*Lines?.*|.*Log.*|.*JetBrains.*|.*Move.*|.*Plugins?.*|.*Projects?.*|.*Rename.*|   \
+             .*Resources?.*|.*Tip of the Day.*|.*Updates?.*|.*Welcome.*)$" \
     manage=off
 
 # ++++++++++++++++++++++++++++++ Android Studio +++++++++++++++++++++++++++++ #
@@ -90,8 +91,8 @@ yabai -m rule --add \
     label="Android Studio" \
     app="^.*Android Studio.*$" \
     title="^(.*About.*|.*Android.*|.*Configurations?.*|.*Debug.*|.*Delete.*|.*devices?.*|.*Files?.*| \
-             .*Installations?.*|.*Errors?.*|.*Lines?.*|.*Log.*|.*JetBrains.*|.*Move.*|     \
-             .*Studio.*|.*SDK.*|.*Plugins?.*|.*Projects?.*|.*Provide?.*|.*Rename.*|.*Resources?.*|              \
+             .*Installations?.*|.*Errors?.*|.*Lines?.*|.*Log.*|.*JetBrains.*|.*Move.*|               \
+             .*Studio.*|.*SDK.*|.*Plugins?.*|.*Projects?.*|.*Provide?.*|.*Rename.*|.*Resources?.*|   \
              .*Tip of the Day.*|.*Updates?.*|.*Welcome.*)$" \
     manage=off
 

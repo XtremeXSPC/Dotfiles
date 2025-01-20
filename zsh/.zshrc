@@ -214,18 +214,19 @@ export ZSH_COMPDUMP="$ZSH/cache/.zcompdump-$HOST"
 # =========================================================================== #
 
 # -------------------------------- Directories ------------------------------ #
-export LCS_Data="/Volumes/LCS.Data/"
+# LCS.Data Volume
+export LCS_Data="/Volumes/LCS.Data"
+
+# Clang-Format Configuration
+export CLANG_FORMAT_CONFIG="$HOME/.config/clang-format/.clang-format"
 
 # -------------------------------- BLOG ------------------------------------- #
 # Variables for Blog Automation
 
-export IMAGES_SCRIPT_PATH="$HOME/04_LCS.Blog/Automatic-Updates/images.py"
-export BLOG_POSTS_DIR="$HOME/04_LCS.Blog/CS-Topics/content/posts/"
-export BLOG_STATIC_IMAGES_DIR="$HOME/04_LCS.Blog/CS-Topics/static/images"
-export OBSIDIAN_ATTACHMENTS_DIR="$HOME/Documents/Obsidian-Vault/XSPC-Vault/Blog/images"
-
-# Clang-Format Configuration
-export CLANG_FORMAT_CONFIG="$HOME/.config/clang-format/.clang-format"
+export BLOG_POSTS_DIR="$LCS_Data/Blog/CS-Topics/content/posts/"
+export BLOG_STATIC_IMAGES_DIR="$LCS_Data/Blog/CS-Topics/static/images"
+export IMAGES_SCRIPT_PATH="$LCS_Data/Blog/Automatic-Updates/images.py"
+export OBSIDIAN_ATTACHMENTS_DIR="$LCS_Data/Documents/Obsidian-Vault/XSPC-Vault/Blog/images"
 
 # =========================================================================== #
 # ++++++++++++++++++++++ PERSONAL CONFIGURATION - THEMES ++++++++++++++++++++ #

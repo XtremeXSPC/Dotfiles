@@ -1,66 +1,66 @@
 #! /bin/bash
 
-# Directory sorgente da cui copiare le configurazioni
+# Source directory from which to copy configurations
 SOURCE_DIR="$HOME/.config"
 
-# Directory corrente dove creare i pacchetti Stow
+# Current directory where to create Stow packages
 TARGET_DIR=$(pwd)
 
-# Elenco delle directory da escludere
+# List of directories to exclude
 EXCLUDE=(
-	".andorid" ".vscode" "crossnote" "emacs" "fzf-fit.sh" "gh" "github-copilot"
-	"gtk-2.0" "jgit" "Microsoft" "raycast" "thefuck" "wireshark" "xbuild" "zsh"
+    ".andorid" ".vscode" "crossnote" "emacs" "fzf-fit.sh" "gh" "github-copilot"
+    "gtk-2.0" "jgit" "Microsoft" "raycast" "thefuck" "wireshark" "xbuild" "zsh"
 )
 
-# Controlla che la directory sorgente esista
+# Check that the source directory exists
 if [[ ! -d "$SOURCE_DIR" ]]; then
-	echo "Errore: la directory $SOURCE_DIR non esiste."
-	exit 1
+    echo "Error: the directory $SOURCE_DIR does not exist."
+    exit 1
 fi
 
-# Itera su tutte le directory in ~/.config
+# Iterate over all directories in ~/.config
 for dir in "$SOURCE_DIR"/*; do
-    # Controlla che sia una directory
+    # Check that it is a directory
     if [[ -d "$dir" ]]; then
-        # Nome del pacchetto (basename della directory)
+        # Package name (basename of the directory)
         package_name=$(basename "$dir")
         
-        # Controlla se la directory è nell'elenco delle esclusioni
+        # Check if the directory is in the exclusion list
         if [[ " ${EXCLUDE[@]} " =~ " $package_name " ]]; then
-            echo "Saltata directory esclusa: $package_name"
+            echo "Skipped excluded directory: $package_name"
             continue
         fi
 
-        # Percorso della directory del pacchetto
+        # Path of the package directory
         package_path="$TARGET_DIR/$package_name/.config/$package_name"
 
-        # Controlla se la directory del pacchetto esiste
+        # Check if the package directory exists
         if [[ -d "$TARGET_DIR/$package_name" || -L "$TARGET_DIR/$package_name" ]]; then
-            # Se è un symlink, avvisa l'utente
+            # If it is a symlink, warn the user
             if [[ -L "$TARGET_DIR/$package_name" ]]; then
-                echo "Attenzione: il pacchetto '$package_name' esiste come symlink."
+                echo "Warning: the package '$package_name' exists as a symlink."
             else
-                echo "Attenzione: il pacchetto '$package_name' esiste come directory."
+                echo "Warning: the package '$package_name' exists as a directory."
             fi
-            # Chiedi conferma per sovrascrivere
-            read -p "Vuoi sovrascriverlo? (s/N): " response
-            if [[ "$response" != "s" && "$response" != "S" ]]; then
-                echo "Saltato pacchetto: $package_name"
+            # Ask for confirmation to overwrite
+            read -p "Do you want to overwrite it? (y/N): " response
+            if [[ "$response" != "y" && "$response" != "Y" ]]; then
+                echo "Skipped package: $package_name"
                 continue
             else
-                echo "Sovrascrivo il pacchetto: $package_name"
+                echo "Overwriting package: $package_name"
                 rm -rf "$TARGET_DIR/$package_name"
             fi
         fi
 
-        # Crea la struttura necessaria
+        # Create the necessary structure
         mkdir -p "$package_path"
         
-        # Copia i file dal sorgente al pacchetto
+        # Copy files from source to package
         cp -r "$dir/"* "$package_path/"
         
-        echo "Creato pacchetto Stow: $package_name"
+        echo "Created Stow package: $package_name"
     fi
 done
 
-echo "Operazione completata."
+echo "Operation completed."
