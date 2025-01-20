@@ -45,6 +45,7 @@
 # File temporanei
 .tmp.driveupload
 .fake
-tmux/.config/tmux/plugins/tmux-resurrect
+
 alacritty/.config/alacritty/themes
+tmux/.config/tmux/plugins/tmux-resurrect
 tmux/.config/tmux/plugins/tmux-continuum
