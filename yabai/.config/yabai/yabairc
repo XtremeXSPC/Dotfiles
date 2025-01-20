@@ -1,0 +1,135 @@
+#!/usr/bin/env sh
+# ============================================================================ #
+# ========================= Yabai Configuration file ========================= #
+
+# ========================= Scripting Addition =============================== #
+# For this to work you must configure sudo such that
+# it will be able to run the command without password
+
+sudo yabai --load-sa
+yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
+yabai -m signal --add event=window_focused action="sketchybar --trigger window_focus"
+# yabai -m signal --add label="flash_focus"       \
+#                       event="window_focused"    \
+#                       action="yabai -m window \$YABAI_WINDOW_ID --opacity 0.9 &&           \
+#                       sleep \$(yabai -m config window_opacity_duration) && yabai -m window \
+#                       \$YABAI_WINDOW_ID --opacity 0.0"
+
+# ========================= Aspect Customization ============================= #
+
+yabai -m config external_bar               all:40:0       \
+                mouse_follows_focus        off            \
+                focus_follows_mouse        off            \
+                window_zoom_persist        off            \
+                window_topmost             off            \
+                window_placement           second_child   \
+                window_shadow              float          \
+                window_opacity             on             \
+                active_window_opacity      1.0            \
+                normal_window_opacity      0.975          \
+                window_opacity_duration    0.1            \
+                window_animation_duration  0.2            \
+                window_animation_easing    ease_out_quint \
+                insert_feedback_color      0xff565f89     \
+                auto_balance               off            \
+                split_type                 auto           \
+                split_ratio                0.5            \
+                mouse_modifier             cmd            \
+                mouse_action1              move           \
+                mouse_action2              resize         \
+                mouse_drop_action          swap           \
+                top_padding                12             \
+                bottom_padding             12             \
+                left_padding               12             \
+                right_padding              12             \
+                window_gap                 12
+
+# ++++++++++++++++++++++++++++++ Custom Rules ++++++++++++++++++++++++++++++++ #
+yabai -m rule --add app="kitty" opacity=0.9875
+
+# ====================== End Aspect Customization ============================ #
+
+
+# ========================== Disabling Rules ================================= #
+
+# Exclude problematic apps from being managed:
+EXCLUDED_APPS="Activity Monitor|App Store|Archive Utility|BetterDisplay|Calculator|CleanMyMac|Dictionary|Finder| \
+               Photo Booth|Software Update|System Preferences|System Settings|TextEdit|1Password|    \
+               Alfred|Company Portal|Google Drive|LocalSend|Microsoft OneDrive|Python|Steam| \
+               Sudoku|Tailscale|Transmission|The Unarchiver|VLC"
+
+yabai -m rule --add app="^($EXCLUDED_APPS)$" manage=off
+
+# Exclude Finder specific windows from being managed
+yabai -m rule --add label="Finder" app="^Finder$" title="^(Finder|Co(py|nnect)|Move|Info|Pref)" manage=off
+
+# Exclude "Settings" specific windows from being managed
+yabai -m rule --add label="Settings" app="^.*$" title=".*Settings?.*" manage=off
+
+# Exclude Safari specific windows from being managed
+yabai -m rule --add label="Safari" app="^Safari$" \
+                    title="^(General|(Tab|Password|Website|Extension)s|AutoFill|Se(arch|curity)|Privacy|Advance)$" manage=off
+
+# Exclude "About This Mac" specific windows from being managed
+yabai -m rule --add label="About This Mac" app="System Information" title="About This Mac" manage=off
+
+# +++++++++++++++++++++++++++++ JetBrains IDEs +++++++++++++++++++++++++++++++ #
+
+# Exclude JetBrains IDEs specific windows from being managed
+JETBRAINS_IDEs="CLion|IntelliJ IDEA|PyCharm|WebStorm|RustRover-EAP"
+
+yabai -m rule --add \
+    app="^($JETBRAINS_IDEs)$" \
+    title="^(.*Configurations?.*|.*Debug.*|.*Delete.*|.*devices?.*|.*Files?.*|.*Installations?.*|.*Errors?.*| \
+             .*Lines?.*|.*Log.*|.*JetBrains.*|.*Move.*|.*Plugins?.*|.*Projects?.*|.*Rename.*|.*Resources?.*|  \
+             .*Tip of the Day.*|.*Updates?.*|.*Welcome.*)$" \
+    manage=off
+
+# ++++++++++++++++++++++++++++++ Android Studio +++++++++++++++++++++++++++++ #
+yabai -m rule --add \
+    label="Android Studio" \
+    app="^.*Android Studio.*$" \
+    title="^(.*About.*|.*Android.*|.*Configurations?.*|.*Debug.*|.*Delete.*|.*devices?.*|.*Files?.*| \
+             .*Installations?.*|.*Errors?.*|.*Lines?.*|.*Log.*|.*JetBrains.*|.*Move.*|     \
+             .*Studio.*|.*SDK.*|.*Plugins?.*|.*Projects?.*|.*Provide?.*|.*Rename.*|.*Resources?.*|              \
+             .*Tip of the Day.*|.*Updates?.*|.*Welcome.*)$" \
+    manage=off
+
+# +++++++++++++++++++++++++++++++++ Eclipse ++++++++++++++++++++++++++++++++++ #
+yabai -m rule --add \
+    label="Eclipse" \
+    app="^.*Eclipse.*$" \
+    title="^(.*Configuration.*|.*Errors?.*|.*Install.*|.*Import.*|.*Marketplace.*|.*Preferences.*| \
+             .*Problems?.*|.*Projects?.*|.*Resources?.*)$" \
+    manage=off
+
+# ++++++++++++++++++++++++++++++ Other Exclusions ++++++++++++++++++++++++++++ #
+# Exclude "VNC Viewer" specific windows from being managed
+yabai -m rule --add label="VNC Viewer" \
+                    app="^VNC Viewer$" \
+                    title="^(.*VNC.*|.*Viewer.*|.*RealVNC.*)$" \
+                    manage=off
+
+# ========================= End Disabling Rules ============================== #
+
+
+# ============================ Other Stuff =================================== #
+# - bsp, stack or float
+yabai -m config layout bsp
+echo "yabai configuration loaded..."
+
+# ++++++++++++++++++++++++++++++ Border Style ++++++++++++++++++++++++++++++++ #
+: << 'EOF'
+borders     style=round                 \
+            width=5.0                   \
+            hidpi=off                   \
+            blur_radius=100             \
+            background_color=0x993c3836 \
+            active_color="gradient(top_left=0xfffe8019,bottom_right=0xffcc241d,top_right=0xfffb4934,bottom_left=0xfffabd2f)" \
+            blacklist="JetBrains-Toolbox,CLion,CLion-Nova,IntelliJ IDEA Ultimate,
+                   PyCharm Professional Edition,GoLand,WebStorm,DataGrip,PhpStorm,
+                   Rider,RustRover-EAP" \
+            inactive_color=0xE63c3836   \
+EOF 
+
+# =========================== End Other Stuff ================================ #

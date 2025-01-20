@@ -1,0 +1,47 @@
+# File di sistema macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Escludere directory di debug 
+*.dSYM/
+
+# Escludere file temporanei di Google Drive
+.Google\ Drive
+*.tmp
+*.tmp.drivedownload
+*.gdoc
+*.gsheet
+*.gslides
+
+# File di log
+*.log
+
+# File di cache
+.cache
+*.cache
+*.tmp
+
+# File di backup
+*~
+*.swp
+*.swo
+*.bak
+
+# Emacs
+*~
+\#*\#
+.emacs.desktop
+.emacs.desktop.lock
+
+# File di build
+/build/
+*.o
+*.out
+*.exe
+*.dll
+*.so
+
+# File temporanei
+.tmp.driveupload
+.fake
