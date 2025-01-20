@@ -1,0 +1,57 @@
+# Basato sullo stile LLVM con personalizzazioni
+BasedOnStyle: LLVM
+
+# Mantieni l'operatore * vicino al tipo
+PointerAlignment: Left
+
+# Limite per la lunghezza di ogni riga
+ColumnLimit: 100
+
+# Dimensione dell'indentazione (2 spazi per coerenza con il C/C++)
+IndentWidth: 2
+
+# Usa spazi invece di tab
+UseTab: Never
+
+# Forza la dichiarazione template su una nuova riga
+AlwaysBreakTemplateDeclarations: Yes
+
+# Formattazione degli argomenti delle funzioni
+AlignAfterOpenBracket: AlwaysBreak
+AllowShortFunctionsOnASingleLine: InlineOnly
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: false
+  AfterControlStatement: false
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
+  BeforeElse: false
+  IndentBraces: false
+
+# Preferisci che gli include siano ordinati
+SortIncludes: true
+
+# Allineamento dei parametri per migliorare la leggibilità
+AlignConsecutiveDeclarations: true
+AlignConsecutiveAssignments: true
+AlignTrailingComments: true
+
+# Spaziature
+SpaceBeforeParens: ControlStatements
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpacesInAngles: false
+
+# Configura la gestione di struct e class
+AlwaysBreakAfterReturnType: None
+AllowShortBlocksOnASingleLine: false
+BinPackParameters: false
+
+# Configura la gestione di operatori e parametri
+BreakBeforeBinaryOperators: NonAssignment
+BreakConstructorInitializers: AfterColon
+
+# Nome delle macro sempre in uppercase
+MacroBlockBegin: AlwaysBreak
+MacroBlockEnd: AlwaysBreak
