@@ -165,7 +165,6 @@ shift + cmd - l : yabai -m window --warp east
 # shift + lalt - 0 : yabai -m window --space 10
 
 # =========================================================================== #
- 
 # ---------------------- Stacks (shift + ctrl - ...) ------------------------ #
 # Add the active window to the window or stack to the {direction}: shift + ctrl - {h, j, k, l}
 shift + ctrl - h : yabai -m window  west --stack $(yabai -m query --windows --window | jq -r '.id')
@@ -209,3 +208,5 @@ ctrl + lalt + cmd - k : yabai -m window --resize top:0:20
 ctrl + lalt + cmd - l : yabai -m window --resize right:-20:0
 
 # =========================================================================== #
+# ---------------------- Open Applicaitons ---------------------------------- #
+latl - o : open -a /Applications/Ghostty
