@@ -23,13 +23,13 @@
       {
         "alignment": "left",
         "segments": [
-          {
+            {
             "type": "text",
             "style": "plain",
             "background": "transparent",
             "foreground": "p:terminal-yellow",
-            "template": "{{ if eq .OS \"windows\" }}\uE70F{{ else if eq .OS \"linux\" }}\uF17C{{ else if eq .OS \"darwin\" }}\uF179{{ else }}\uF128{{ end }} "
-          },
+            "template": "{{ if .WSL }}\uF17C{{ else if eq .OS \"windows\" }}\uE70F{{ else if eq .OS \"linux\" }}\uF17C{{ else if eq .OS \"darwin\" }}\uF179{{ else }}\uF128{{ end }} "
+            },
           {
             "type": "text",
             "style": "plain",

@@ -226,7 +226,7 @@ export CLANG_FORMAT_CONFIG="$HOME/.config/clang-format/.clang-format"
 export BLOG_POSTS_DIR="$LCS_Data/Blog/CS-Topics/content/posts/"
 export BLOG_STATIC_IMAGES_DIR="$LCS_Data/Blog/CS-Topics/static/images"
 export IMAGES_SCRIPT_PATH="$LCS_Data/Blog/Automatic-Updates/images.py"
-export OBSIDIAN_ATTACHMENTS_DIR="$LCS_Data/Documents/Obsidian-Vault/XSPC-Vault/Blog/images"
+export OBSIDIAN_ATTACHMENTS_DIR="$HOME/Documents/Obsidian-Vault/XSPC-Vault/Blog/images"
 
 # =========================================================================== #
 # ++++++++++++++++++++++ PERSONAL CONFIGURATION - THEMES ++++++++++++++++++++ #
