@@ -35,7 +35,7 @@
           "style": "plain",
           "background": "transparent",
           "foreground": "p:terminal-blue",
-          "template": "━\u25B6 "
+          "template": " \u0000"
         },
         {
           "type": "path",
@@ -66,7 +66,7 @@
           "type": "text",
           "style": "plain",
           "foreground": "p:terminal-white",
-          "template": " \ueb10  "
+          "template": " \u0000"
           
         },
         {
@@ -122,18 +122,6 @@
           "style": "plain",
           "foreground": "p:terminal-red",
           "template": "\uF7A2 {{ .Full }} "
-        },
-        {
-          "type": "c",
-          "style": "plain",
-          "foreground": "p:terminal-blue",
-          "template": "\uE61E {{ .Full }} "
-        },
-        {
-          "type": "cpp",
-          "style": "plain",
-          "foreground": "p:terminal-blue",
-          "template": "\uE61D {{ .Full }} "
         }
       ],
       "type": "prompt"
@@ -147,7 +135,6 @@
           "style": "plain",
           "foreground": "p:pistachio-green",
           "template": "\ue602"
-
         }
       ],
       "type": "prompt"
