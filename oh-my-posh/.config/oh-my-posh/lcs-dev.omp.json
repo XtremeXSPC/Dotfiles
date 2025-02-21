@@ -35,7 +35,7 @@
           "style": "plain",
           "background": "transparent",
           "foreground": "p:terminal-blue",
-          "template": " \u0000"
+          "template": "\u0000"
         },
         {
           "type": "path",
@@ -134,7 +134,7 @@
           "type": "text",
           "style": "plain",
           "foreground": "p:pistachio-green",
-          "template": "\ue602"
+          "template": "\uf101"
         }
       ],
       "type": "prompt"
