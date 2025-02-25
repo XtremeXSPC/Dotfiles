@@ -9,6 +9,7 @@
 
   outputs = inputs@{ self, nix-darwin, nixpkgs }:
   let
+ 
     configuration = { pkgs, config, ... }: {
       # List packages installed in system profile. To search by name, run:
       # $ nix-env -qaP | grep wget
@@ -17,7 +18,7 @@
         ];
 
       # Auto upgrade nix package and the daemon service.
-      services.nix-daemon.enable = true;
+      nix.enable = true;
       # nix.package = pkgs.nix;
 
       # Necessary for using flakes on this system.
@@ -36,6 +37,7 @@
 
       # The platform the configuration will be used on.
       nixpkgs.hostPlatform = "aarch64-darwin";
+ 
     };
   in
   {
