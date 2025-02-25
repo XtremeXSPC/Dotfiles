@@ -1,14 +1,16 @@
 # =========================================================================== #
 # ====================== Skhd Configuration file ============================ #
 
-# Window Navigation (through display borders): lalt - {h, j, k, l}
+# =========================================================================== #
+# ====================== NAVIGAZIONE FINESTRE E SPAZI ======================= #
+
+# Navigazione finestre (attraverso bordi display): lalt - {h, j, k, l}
 lalt - h : yabai -m window --focus west  || yabai -m display --focus west
 lalt - j : yabai -m window --focus south || yabai -m display --focus south
 lalt - k : yabai -m window --focus north || yabai -m display --focus north
 lalt - l : yabai -m window --focus east  || yabai -m display --focus east
 
-## Navigation (lalt - ...)
-# Space Navigation (four spaces per display): lalt - {1, 2, 3, 4, ...}
+# Navigazione spazi (quattro spazi per display): lalt - {1, 2, 3, 4, ...}
 lalt - 1 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[1] ]] \
            && (yabai -m space --focus $SPACES[1] && yabai -m query --spaces --space $SPACES[1] | jq -r '.windows[0] // empty' | xargs yabai -m window --focus)
 lalt - 2 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[2] ]] \
@@ -30,7 +32,10 @@ lalt - 9 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [
 lalt - 0 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[10] ]] \
            && (yabai -m space --focus $SPACES[10] && yabai -m query --spaces --space $SPACES[10] | jq -r '.windows[0] // empty' | xargs yabai -m window --focus)
 
-# Moving windows between spaces: shift + lalt - {1, 2, 3, 4, ... 0, p, n} (Assumes 10 Spaces Max per Display)
+# =========================================================================== #
+# ====================== MOVIMENTI FINESTRE TRA SPAZI ======================= #
+
+# Sposta finestra negli spazi specifici: shift + lalt - {1, 2, 3, 4, ... 0}
 shift + lalt - 1 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[1] ]] \
                   && (yabai -m window --space $SPACES[1] && yabai -m space --focus $SPACES[1])
 shift + lalt - 2 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[2] ]] \
@@ -52,36 +57,7 @@ shift + lalt - 9 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]
 shift + lalt - 0 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[10] ]] \
                   && (yabai -m window --space $SPACES[10] && yabai -m space --focus $SPACES[10])
 
-# =========================================================================== #
-# ---------------------- Move window to left/right space -------------------- #
-
-# Move window to left space
-# shift + cmd - left : \
-#     CURRENT_SPACE=$(yabai -m query --spaces --space | jq '.index') && \
-#     TARGET_SPACE=$((CURRENT_SPACE - 1)) && \
-#     yabai -m window --space $TARGET_SPACE && \
-#     yabai -m space --focus $TARGET_SPACE
-# 
-# # Move window to right space
-# shift + cmd - right : \
-#     CURRENT_SPACE=$(yabai -m query --spaces --space | jq '.index') && \
-#     TARGET_SPACE=$((CURRENT_SPACE + 1)) && \
-#     yabai -m window --space $TARGET_SPACE && \
-#     yabai -m space --focus $TARGET_SPACE
-
-# More secure way to move window to left/right space with boundary check
-# Move the window to the space on the left on the current monitor
-shift + cmd - left : \
-    CURRENT_WINDOW_ID=$(yabai -m query --windows --window | jq '.id'); \
-    CURRENT_SPACE=$(yabai -m query --spaces --space | jq '.index'); \
-    PREV_SPACE=$(yabai -m query --spaces | jq -r --argjson CURRENT "$CURRENT_SPACE" '.[] | select(.index == ($CURRENT - 1)) | .index'); \
-    if [ -n "$PREV_SPACE" ]; then \
-        yabai -m window --space $PREV_SPACE; \
-        yabai -m space --focus $PREV_SPACE; \
-        yabai -m window --focus $CURRENT_WINDOW_ID; \
-    fi
-
-# Move the window to the space on the right on the current monitor
+# Sposta finestra allo spazio successivo/precedente
 shift + cmd - right : \
     CURRENT_WINDOW_ID=$(yabai -m query --windows --window | jq '.id'); \
     CURRENT_SPACE=$(yabai -m query --spaces --space | jq '.index'); \
@@ -92,131 +68,117 @@ shift + cmd - right : \
         yabai -m window --focus $CURRENT_WINDOW_ID; \
     fi
 
-# ---------------------- Create and Destroy Spaces -------------------------- #
-# Create a new space, move window and follow focus
- 
-# shift + lalt - n : yabai -m space --create && \
-#                   index="$(yabai -m query --displays --display | jq '.spaces[-1]')" && \
-#                   yabai -m window --space "${index}" && \
-#                   yabai -m space --focus "${index}"
+shift + cmd - left : \
+    CURRENT_WINDOW_ID=$(yabai -m query --windows --window | jq '.id'); \
+    CURRENT_SPACE=$(yabai -m query --spaces --space | jq '.index'); \
+    PREV_SPACE=$(yabai -m query --spaces | jq -r --argjson CURRENT "$CURRENT_SPACE" '.[] | select(.index == ($CURRENT - 1)) | .index'); \
+    if [ -n "$PREV_SPACE" ]; then \
+        yabai -m window --space $PREV_SPACE; \
+        yabai -m space --focus $PREV_SPACE; \
+        yabai -m window --focus $CURRENT_WINDOW_ID; \
+    fi
 
+# Scorciatoie aggiuntive per spostare finestre
 shift + lalt - n : yabai -m window --space next && yabai -m space --focus next
 shift + lalt - p : yabai -m window --space prev && yabai -m space --focus prev
 
-# Delete focused space
-# lalt - q : yabai -m space --destroy
-
 # =========================================================================== #
-# ---------------------- Manipulate Windows --------------------------------- #
+# ====================== MANIPOLAZIONE FINESTRE ============================= #
 
-# Equalize size of windows 
+# Equalize grandezza finestre
 ctrl + lalt - e : yabai -m space --balance
 
-# Toggle window split type
+# Cambia tipo di split
 lalt - e : yabai -m window --toggle split
 
-# Close window
+# Chiudi finestra
 ctrl + lalt - c : yabai -m window --close
 
-# Minimize window
+# Minimizza finestra
 lalt - m : yabai -m window --minimize
 
-# Rotate tree
+# Ruota albero
 lalt - r : yabai -m space --rotate 90
 
-# Mirror tree x-axis, y-axis
+# Specchia albero sugli assi x, y
 lalt - x : yabai -m space --mirror x-axis
 lalt - y : yabai -m space --mirror y-axis
 
-# Float / unfloat window and center on screen
+# Float / unfloat finestra e centra
 lalt - t : yabai -m window --toggle float;\
            yabai -m window --grid 4:4:1:1:2:2
 
-# Toggle desktop offset
+# Toggle padding desktop
 lalt - a : yabai -m space --toggle padding; yabai -m space --toggle gap
 
-# Toggle window parent zoom
+# Toggle zoom finestra parent
 lalt - d : yabai -m window --focus mouse && \
            yabai -m window --toggle zoom-parent
 
-# Toggle window fullscreen zoom
+# Toggle finestra fullscreen zoom
 lalt - f : yabai -m window --focus mouse && \
            yabai -m window --toggle zoom-fullscreen
 
-# Increase, decrease gap in focused space
+# Aumenta, diminuisci gap nello spazio attivo
 lalt - g : yabai -m space --gap rel:20
 shift + lalt - g : yabai -m space --gap rel:-20
 
-# Toggle window native fullscreen
+# Toggle finestra native fullscreen
 shift + lalt - f : yabai -m window --toggle native-fullscreen
 
-# ---------------------- Move window ---------------------------------------- #
+# =========================================================================== #
+# ====================== SPOSTAMENTO FINESTRE IN LAYOUT ===================== #
+
+# Sposta finestra (warp) in direzione
 shift + cmd - h : yabai -m window --warp west
 shift + cmd - j : yabai -m window --warp south
 shift + cmd - k : yabai -m window --warp north
 shift + cmd - l : yabai -m window --warp east
 
-# ---------------------- Swap window [OLD] ---------------------------------- #
-# shift + lalt - h : yabai -m window --swap west
-# shift + lalt - j : yabai -m window --swap south
-# shift + lalt - k : yabai -m window --swap north
-# shift + lalt - l : yabai -m window --swap east
-
-# ---------------------- Send window to a space ----------------------------- #
-# shift + lalt - 1 : yabai -m window --space 1
-# shift + lalt - 2 : yabai -m window --space 2
-# shift + lalt - 3 : yabai -m window --space 3
-# shift + lalt - 4 : yabai -m window --space 4
-# shift + lalt - 5 : yabai -m window --space 5
-# shift + lalt - 6 : yabai -m window --space 6
-# shift + lalt - 7 : yabai -m window --space 7
-# shift + lalt - 8 : yabai -m window --space 8
-# shift + lalt - 9 : yabai -m window --space 9
-# shift + lalt - 0 : yabai -m window --space 10
-
 # =========================================================================== #
-# ---------------------- Stacks (shift + ctrl - ...) ------------------------ #
-# Add the active window to the window or stack to the {direction}: shift + ctrl - {h, j, k, l}
-shift + ctrl - h : yabai -m window  west --stack $(yabai -m query --windows --window | jq -r '.id')
+# ====================== STACKS E INSERIMENTO =============================== #
+
+# Aggiungi finestra attiva allo stack nella direzione: shift + ctrl - {h, j, k, l}
+shift + ctrl - h : yabai -m window west --stack $(yabai -m query --windows --window | jq -r '.id')
 shift + ctrl - j : yabai -m window south --stack $(yabai -m query --windows --window | jq -r '.id')
 shift + ctrl - k : yabai -m window north --stack $(yabai -m query --windows --window | jq -r '.id')
-shift + ctrl - l : yabai -m window  east --stack $(yabai -m query --windows --window | jq -r '.id')
+shift + ctrl - l : yabai -m window east --stack $(yabai -m query --windows --window | jq -r '.id')
 
-# ---------------------- Insertion (shift + ctrl + lalt - ...) -------------- #
-# Set insertion point for focused container: shift + ctrl + lalt - {h, j, k, l, s}
+# Imposta punto di inserimento per il container: shift + ctrl + lalt - {h, j, k, l, s}
 shift + ctrl + lalt - h : yabai -m window --insert west
 shift + ctrl + lalt - j : yabai -m window --insert south
 shift + ctrl + lalt - k : yabai -m window --insert north
 shift + ctrl + lalt - l : yabai -m window --insert east
 shift + ctrl + lalt - s : yabai -m window --insert stack
 
-# ---------------------- Toggle sketchybar ---------------------------------- #
-shift + lalt - space : sketchybar --bar hidden=toggle
+# =========================================================================== #
+# ====================== RIDIMENSIONAMENTO FINESTRE ========================= #
 
-# ---------------------- Stop/Start/Restart yabai --------------------------- #
-ctrl + alt - q : yabai --stop-service
-ctrl + alt - s : yabai --start-service
-ctrl + alt - r : yabai --restart-service
-
-# ---------------------- Stop/Start/ borders -------------------------------- #
-# ctrl + alt - b : brew services stop borders
-
-# ---------------------- Change layout of desktop --------------------------- #
-ctrl + lalt - a : yabai -m space --layout bsp
-ctrl + lalt - d : yabai -m space --layout float
-
-# ---------------------- Increase window size ------------------------------- #
+# Aumenta dimensione finestra
 ctrl + lalt - h : yabai -m window --resize left:-20:0
 ctrl + lalt - j : yabai -m window --resize bottom:0:20
 ctrl + lalt - k : yabai -m window --resize top:0:-20
 ctrl + lalt - l : yabai -m window --resize right:20:0
 
-# ---------------------- Decrease window size ------------------------------- #
+# Diminuisci dimensione finestra
 ctrl + lalt + cmd - h : yabai -m window --resize left:20:0
 ctrl + lalt + cmd - j : yabai -m window --resize bottom:0:-20
 ctrl + lalt + cmd - k : yabai -m window --resize top:0:20
 ctrl + lalt + cmd - l : yabai -m window --resize right:-20:0
 
 # =========================================================================== #
-# ---------------------- Open Applicaitons ---------------------------------- #
-latl - o : open -a /Applications/Ghostty
+# ====================== LAYOUT E SERVIZI =================================== #
+
+# Toggle sketchybar
+shift + lalt - space : sketchybar --bar hidden=toggle
+
+# Ferma/Avvia/Riavvia yabai
+ctrl + alt - q : yabai --stop-service
+ctrl + alt - s : yabai --start-service
+ctrl + alt - r : yabai --restart-service
+
+# Cambia layout del desktop
+ctrl + lalt - a : yabai -m space --layout bsp
+ctrl + lalt - d : yabai -m space --layout float
+
+# =========================================================================== #
