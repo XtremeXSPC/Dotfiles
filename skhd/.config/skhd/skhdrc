@@ -11,36 +11,47 @@ lalt - k : yabai -m window --focus north || yabai -m display --focus north
 lalt - l : yabai -m window --focus east  || yabai -m display --focus east
 
 # Navigazione spazi (quattro spazi per display): lalt - {1, 2, 3, 4, ...}
-lalt - 1 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[1] ]] \
-           && yabai -m space --focus $SPACES[1] && WINDOW_ID=$(yabai -m query --spaces --space $SPACES[1] | jq '.windows[0]') \
-           && [ "$WINDOW_ID" != "null" ] && [ -n "$WINDOW_ID" ] && yabai -m window --focus $WINDOW_ID
-lalt - 2 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[2] ]] \
-           && yabai -m space --focus $SPACES[2] && WINDOW_ID=$(yabai -m query --spaces --space $SPACES[2] | jq '.windows[0]') \
-           && [ "$WINDOW_ID" != "null" ] && [ -n "$WINDOW_ID" ] && yabai -m window --focus $WINDOW_ID
-lalt - 3 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[3] ]] \
-           && yabai -m space --focus $SPACES[3] && WINDOW_ID=$(yabai -m query --spaces --space $SPACES[3] | jq '.windows[0]') \
-           && [ "$WINDOW_ID" != "null" ] && [ -n "$WINDOW_ID" ] && yabai -m window --focus $WINDOW_ID
-lalt - 4 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[4] ]] \
-           && yabai -m space --focus $SPACES[4] && WINDOW_ID=$(yabai -m query --spaces --space $SPACES[4] | jq '.windows[0]') \
-           && [ "$WINDOW_ID" != "null" ] && [ -n "$WINDOW_ID" ] && yabai -m window --focus $WINDOW_ID
-lalt - 5 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[5] ]] \
-           && yabai -m space --focus $SPACES[5] && WINDOW_ID=$(yabai -m query --spaces --space $SPACES[5] | jq '.windows[0]') \
-           && [ "$WINDOW_ID" != "null" ] && [ -n "$WINDOW_ID" ] && yabai -m window --focus $WINDOW_ID
-lalt - 6 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[6] ]] \
-           && yabai -m space --focus $SPACES[6] && WINDOW_ID=$(yabai -m query --spaces --space $SPACES[6] | jq '.windows[0]') \
-           && [ "$WINDOW_ID" != "null" ] && [ -n "$WINDOW_ID" ] && yabai -m window --focus $WINDOW_ID
-lalt - 7 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[7] ]] \
-           && yabai -m space --focus $SPACES[7] && WINDOW_ID=$(yabai -m query --spaces --space $SPACES[7] | jq '.windows[0]') \
-           && [ "$WINDOW_ID" != "null" ] && [ -n "$WINDOW_ID" ] && yabai -m window --focus $WINDOW_ID
-lalt - 8 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[8] ]] \
-           && yabai -m space --focus $SPACES[8] && WINDOW_ID=$(yabai -m query --spaces --space $SPACES[8] | jq '.windows[0]') \
-           && [ "$WINDOW_ID" != "null" ] && [ -n "$WINDOW_ID" ] && yabai -m window --focus $WINDOW_ID
-lalt - 9 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[9] ]] \
-           && yabai -m space --focus $SPACES[9] && WINDOW_ID=$(yabai -m query --spaces --space $SPACES[9] | jq '.windows[0]') \
-           && [ "$WINDOW_ID" != "null" ] && [ -n "$WINDOW_ID" ] && yabai -m window --focus $WINDOW_ID
-lalt - 0 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[10] ]] \
-           && yabai -m space --focus $SPACES[10] && WINDOW_ID=$(yabai -m query --spaces --space $SPACES[10] | jq '.windows[0]') \
-           && [ "$WINDOW_ID" != "null" ] && [ -n "$WINDOW_ID" ] && yabai -m window --focus $WINDOW_ID
+# Mappatura per 10 spazi (1-10)
+# Spazio 1
+lalt - 1 : yabai -m space --focus 1; \
+           window_id=$(yabai -m query --windows --space 1 | jq '.[0].id // empty'); \
+           [ -n "$window_id" ] && yabai -m window --focus "$window_id"
+# Spazio 2
+lalt - 2 : yabai -m space --focus 2; \
+           window_id=$(yabai -m query --windows --space 2 | jq '.[0].id // empty'); \
+           [ -n "$window_id" ] && yabai -m window --focus "$window_id"
+# Spazio 3
+lalt - 3 : yabai -m space --focus 3; \
+           window_id=$(yabai -m query --windows --space 3 | jq '.[0].id // empty'); \
+           [ -n "$window_id" ] && yabai -m window --focus "$window_id"
+# Spazio 4
+lalt - 4 : yabai -m space --focus 4; \
+           window_id=$(yabai -m query --windows --space 4 | jq '.[0].id // empty'); \
+           [ -n "$window_id" ] && yabai -m window --focus "$window_id"
+# Spazio 5
+lalt - 5 : yabai -m space --focus 5; \
+           window_id=$(yabai -m query --windows --space 5 | jq '.[0].id // empty'); \
+           [ -n "$window_id" ] && yabai -m window --focus "$window_id"
+# Spazio 6
+lalt - 6 : yabai -m space --focus 6; \
+           window_id=$(yabai -m query --windows --space 6 | jq '.[0].id // empty'); \
+           [ -n "$window_id" ] && yabai -m window --focus "$window_id"
+# Spazio 7
+lalt - 7 : yabai -m space --focus 7; \
+           window_id=$(yabai -m query --windows --space 7 | jq '.[0].id // empty'); \
+           [ -n "$window_id" ] && yabai -m window --focus "$window_id"
+# Spazio 8
+lalt - 8 : yabai -m space --focus 8; \
+           window_id=$(yabai -m query --windows --space 8 | jq '.[0].id // empty'); \
+           [ -n "$window_id" ] && yabai -m window --focus "$window_id"
+# Spazio 9
+lalt - 9 : yabai -m space --focus 9; \
+           window_id=$(yabai -m query --windows --space 9 | jq '.[0].id // empty'); \
+           [ -n "$window_id" ] && yabai -m window --focus "$window_id"
+# Spazio 10
+lalt - 0 : yabai -m space --focus 10; \
+           window_id=$(yabai -m query --windows --space 10 | jq '.[0].id // empty'); \
+           [ -n "$window_id" ] && yabai -m window --focus "$window_id"
 
 # =========================================================================== #
 # ====================== MOVIMENTI FINESTRE TRA SPAZI ======================= #
