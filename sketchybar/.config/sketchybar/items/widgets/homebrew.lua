@@ -104,16 +104,37 @@ end)
 
 -- Azioni al click
 brew:subscribe("mouse.clicked", function(env)
+  -- Debug: registra quando l'evento click viene ricevuto
+  sbar.exec("echo 'Click ricevuto sul widget brew: " .. (env.button or "unknown") .. "' >> /tmp/sketchybar_debug.log")
+  
   if env.button == "left" then
-    -- Click sinistro: apri il terminale con la lista dei pacchetti
-    sbar.exec("osascript -e 'tell application \"Terminal\" to do script \"brew outdated\"'")
+    -- Click sinistro: apri kitty con la lista dei pacchetti
+    sbar.exec("/Applications/kitty.app/Contents/MacOS/kitty --hold -e /usr/local/bin/brew outdated")
   elseif env.button == "right" then
     -- Click destro: aggiorna tutti i pacchetti
-    sbar.exec("osascript -e 'tell application \"Terminal\" to do script \"brew upgrade\"'")
+    sbar.exec("/Applications/kitty.app/Contents/MacOS/kitty --hold -e sh -c '/usr/local/bin/brew upgrade; echo \"\\nAggiornamento completato. Premi un tasto per chiudere.\"; read -n 1'")
   elseif env.button == "middle" then
     -- Click centrale: forza aggiornamento manuale
     sbar.exec("pkill -USR1 -f 'brew_check'")
   end
+end)
+
+-- Aggiungi anche un evento per mouse.entered per confermare che gli eventi funzionano
+brew:subscribe("mouse.entered", function(env)
+  sbar.exec("echo 'Mouse entered brew widget' >> /tmp/sketchybar_debug.log")
+  -- Cambia temporaneamente il colore dell'icona per feedback visivo
+  local prev_icon_color = brew:query().icon.color
+  brew:set({ icon = { color = colors.accent } })
+  
+  -- Ripristina il colore originale dopo 500ms
+  sbar.exec("sleep 0.5 && sketchybar --trigger 'brew_restore_color'")
+end)
+
+brew:subscribe("brew_restore_color", function(env)
+  -- Ripristina il colore in base al conteggio attuale
+  local count = tonumber(brew:query().label.string) or 0
+  local color = get_color(count)
+  brew:set({ icon = { color = color } })
 end)
 
 -- Sfondo intorno all'elemento brew
