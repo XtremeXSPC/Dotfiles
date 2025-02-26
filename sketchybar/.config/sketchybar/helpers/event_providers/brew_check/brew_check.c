@@ -5,27 +5,28 @@
 #include <stdarg.h>
 #include <sys/time.h>
 
-#define DEFAULT_UPDATE_INTERVAL 900 // 15 minuti in secondi
-#define DEFAULT_CHECK_INTERVAL 60   // 1 minuto in secondi
-#define MAX_EVENT_NAME_LENGTH 64
-#define MAX_MESSAGE_LENGTH 1024
+static const int DEFAULT_UPDATE_INTERVAL = 900;
+static const int DEFAULT_CHECK_INTERVAL  = 60;
+static const int MAX_EVENT_NAME_LENGTH   = 64;
+static const int MAX_MESSAGE_LENGTH      = 1024;
 
 // Variabili globali
-volatile sig_atomic_t terminate = 0;
-brew_t                brew_state;
-char                  event_name[MAX_EVENT_NAME_LENGTH] = {0};
-float                 check_frequency                   = DEFAULT_CHECK_INTERVAL;
-int                   update_interval                   = DEFAULT_UPDATE_INTERVAL;
-bool                  verbose_mode                      = false;
+static volatile sig_atomic_t terminate = 0;
+static brew_t                brew_state;
+static char                  event_name[MAX_EVENT_NAME_LENGTH] = {0};
+static float                 check_frequency                   = DEFAULT_CHECK_INTERVAL;
+static int                   update_interval                   = DEFAULT_UPDATE_INTERVAL;
+static bool                  verbose_mode                      = false;
 
 // Prototipo per funzioni di aiuto
 static void log_message(const char* format, ...);
 static void cleanup_and_exit(int exit_code);
+static void handle_signal(int sig);
 
 /**
  * Gestisce i segnali
  */
-void handle_signal(int sig) {
+static void handle_signal(int sig) {
   // Imposta il flag di terminazione e gestisci in base al segnale
   switch (sig) {
   case SIGINT:
@@ -47,17 +48,32 @@ void handle_signal(int sig) {
  * Funzione di aiuto per la registrazione di messaggi
  */
 static void log_message(const char* format, ...) {
-  if (!verbose_mode)
+  if (!verbose_mode || !format)
     return;
 
   va_list args;
   va_start(args, format);
 
-  time_t     now       = time(NULL);
+  time_t now = time(NULL);
+  if (now == (time_t)-1) {
+    fprintf(stderr, "Errore nell'ottenere l'ora corrente\n");
+    va_end(args);
+    return;
+  }
+
   struct tm* time_info = localtime(&now);
+  if (!time_info) {
+    fprintf(stderr, "Errore nella conversione dell'ora\n");
+    va_end(args);
+    return;
+  }
 
   char timestamp[20];
-  strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", time_info);
+  if (strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", time_info) == 0) {
+    fprintf(stderr, "Errore nella formattazione dell'ora\n");
+    va_end(args);
+    return;
+  }
 
   fprintf(stderr, "[%s] brew_check: ", timestamp);
   vfprintf(stderr, format, args);
@@ -70,15 +86,22 @@ static void log_message(const char* format, ...) {
  * Funzione ausiliaria per verificare se l'aggiornamento è necessario
  * considerando anche la responsività del sistema
  */
-static bool should_update_now(brew_t* brew) {
+[[nodiscard]] static bool should_update_now(brew_t* brew) {
+  if (!brew)
+    return false;
+
   // Check basato sul tempo trascorso
   if (brew_needs_update(brew, update_interval)) {
-    // Potremmo aggiungere logica per evitare di aggiornare durante alto carico di sistema
-    // Ad esempio, controllando il carico medio con getloadavg()
+    // Controlliamo il carico di sistema
     double load[1];
-    if (getloadavg(load, 1) == 1 && load[0] > 2.0) {
-      log_message("Sistema sotto carico (%.2f), rinvio aggiornamento", load[0]);
-      return false;
+    if (getloadavg(load, 1) == 1) {
+      static const double HIGH_LOAD_THRESHOLD = 2.0;
+      if (load[0] > HIGH_LOAD_THRESHOLD) {
+        log_message("Sistema sotto carico (%.2f), rinvio aggiornamento", load[0]);
+        return false;
+      }
+    } else {
+      log_message("Impossibile ottenere il carico di sistema, procedo comunque");
     }
     return true;
   }
@@ -109,20 +132,22 @@ static void check_and_notify(void) {
       event_name, brew_state.outdated_count, brew_state.package_list ? brew_state.package_list : "",
       (long)brew_state.last_check, brew_error_string(brew_state.last_error));
 
-  // Verifica overflow del buffer
-  if (message_len >= (int)sizeof(trigger_message)) {
+  // Verifica overflow o errori del buffer
+  if (message_len < 0) {
+    log_message("Errore durante la formattazione del messaggio");
+    return;
+  } else if (message_len >= (int)sizeof(trigger_message)) {
     log_message("Avviso: messaggio di trigger troncato");
   }
 
   // Invia il comando a sketchybar
   sketchybar(trigger_message);
-  // Nota: sketchybar() è void, quindi non possiamo verificare eventuali errori
 }
 
 /**
  * Pulisce le risorse e termina il programma
  */
-static void cleanup_and_exit(int exit_code) {
+[[noreturn]] static void cleanup_and_exit(int exit_code) {
   log_message("Pulizia risorse in corso...");
   brew_cleanup(&brew_state);
   exit(exit_code);
@@ -132,11 +157,16 @@ static void cleanup_and_exit(int exit_code) {
  * Mostra l'uso del programma
  */
 static void show_usage(const char* program_name) {
+  if (!program_name)
+    program_name = "brew_check";
+
   printf("Uso: %s \"<event-name>\" \"<event_freq>\" [update_interval] [--verbose]\n", program_name);
   printf("  event-name: Nome dell'evento sketchybar da attivare\n");
   printf("  event_freq: Frequenza di controllo aggiornamenti (in secondi)\n");
-  printf("  update_interval: Opzionale - Frequenza di esecuzione brew update (in secondi, default: "
-         "900)\n");
+  printf(
+      "  update_interval: Opzionale - Frequenza di esecuzione brew update (in secondi, default: "
+      "%d)\n",
+      DEFAULT_UPDATE_INTERVAL);
   printf("  --verbose: Opzionale - Abilita messaggi dettagliati\n");
 }
 
@@ -151,6 +181,12 @@ int main(int argc, char** argv) {
   }
 
   // Analizza argomenti aggiuntivi e opzioni
+  if (strlen(argv[1]) >= MAX_EVENT_NAME_LENGTH) {
+    fprintf(
+        stderr, "Errore: nome evento troppo lungo (max %d caratteri)\n", MAX_EVENT_NAME_LENGTH - 1);
+    return 1;
+  }
+
   strncpy(event_name, argv[1], MAX_EVENT_NAME_LENGTH - 1);
   event_name[MAX_EVENT_NAME_LENGTH - 1] = '\0';
 
@@ -168,7 +204,9 @@ int main(int argc, char** argv) {
     } else if (i == 3 && argv[i][0] != '-') {
       // Assume che il terzo argomento sia l'intervallo di aggiornamento se non è un'opzione
       if (sscanf(argv[i], "%d", &update_interval) != 1 || update_interval <= 0) {
-        fprintf(stderr, "Avviso: intervallo di aggiornamento non valido, uso valore predefinito\n");
+        fprintf(
+            stderr, "Avviso: intervallo di aggiornamento non valido, uso valore predefinito %d\n",
+            DEFAULT_UPDATE_INTERVAL);
         update_interval = DEFAULT_UPDATE_INTERVAL;
       }
     }
@@ -179,14 +217,15 @@ int main(int argc, char** argv) {
       check_frequency, update_interval);
 
   // Configura gestori di segnali
-  struct sigaction sa;
-  memset(&sa, 0, sizeof(sa));
-  sa.sa_handler = handle_signal;
+  struct sigaction sa = {0}; // Zero-inizializzazione usando C23
+  sa.sa_handler       = handle_signal;
   sigemptyset(&sa.sa_mask);
 
-  sigaction(SIGINT, &sa, NULL);
-  sigaction(SIGTERM, &sa, NULL);
-  sigaction(SIGHUP, &sa, NULL);
+  if (sigaction(SIGINT, &sa, NULL) == -1 || sigaction(SIGTERM, &sa, NULL) == -1
+      || sigaction(SIGHUP, &sa, NULL) == -1) {
+    fprintf(stderr, "Errore nella configurazione dei gestori di segnali: %s\n", strerror(errno));
+    return 1;
+  }
 
   // Verifica se brew è installato
   if (!brew_is_installed()) {
@@ -209,19 +248,27 @@ int main(int argc, char** argv) {
 
   // Configuriamo l'evento in sketchybar
   char event_message[MAX_MESSAGE_LENGTH];
-  snprintf(event_message, sizeof(event_message), "--add event '%s'", event_name);
+  int  event_msg_len =
+      snprintf(event_message, sizeof(event_message), "--add event '%s'", event_name);
+  if (event_msg_len < 0 || event_msg_len >= (int)sizeof(event_message)) {
+    log_message("Errore nella formattazione del messaggio evento");
+    cleanup_and_exit(1);
+  }
 
-  // Configurazione dell'evento in sketchybar (funzione void, non restituisce codici di errore)
+  // Configurazione dell'evento in sketchybar
   sketchybar(event_message);
 
   // Notifichiamo subito lo stato iniziale
   check_and_notify();
 
   // Calcolo del numero di microsecondi per il sonno
-  unsigned long sleep_microseconds = (unsigned long)(check_frequency * 1000000);
-  if (sleep_microseconds > ULONG_MAX / 2) {
-    log_message("Avviso: intervallo troppo grande, limitato");
-    sleep_microseconds = ULONG_MAX / 2;
+  unsigned long              sleep_microseconds    = (unsigned long)(check_frequency * 1000000);
+  static const unsigned long MAX_SAFE_MICROSECONDS = ULONG_MAX / 2;
+  if (sleep_microseconds > MAX_SAFE_MICROSECONDS || sleep_microseconds == 0) {
+    log_message(
+        "Avviso: intervallo di %f s non valido, limitato a %lu s", check_frequency,
+        MAX_SAFE_MICROSECONDS / 1000000);
+    sleep_microseconds = MAX_SAFE_MICROSECONDS;
   }
 
   // Loop principale
@@ -231,10 +278,11 @@ int main(int argc, char** argv) {
     check_and_notify();
 
     // Attesa con gestione dei segnali
-    unsigned int remaining = sleep_microseconds;
+    unsigned int              remaining        = sleep_microseconds;
+    static const unsigned int SLEEP_CHUNK_SIZE = 500000; // 0.5 secondi
     while (remaining > 0 && !terminate) {
       // Attesa a blocchi più piccoli per reattività ai segnali
-      unsigned int sleep_chunk = (remaining > 500000) ? 500000 : remaining;
+      unsigned int sleep_chunk = (remaining > SLEEP_CHUNK_SIZE) ? SLEEP_CHUNK_SIZE : remaining;
       usleep(sleep_chunk);
       remaining -= sleep_chunk;
     }
@@ -243,7 +291,4 @@ int main(int argc, char** argv) {
   // Pulizia e uscita
   log_message("Terminazione regolare");
   cleanup_and_exit(0);
-
-  // Mai raggiunto
-  return 0;
 }
