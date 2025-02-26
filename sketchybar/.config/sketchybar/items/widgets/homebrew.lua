@@ -102,22 +102,27 @@ brew:subscribe("brew_update", function(env)
   end
 end)
 
--- Azioni al click
-brew:subscribe("mouse.clicked", function(env)
-  -- Debug: registra quando l'evento click viene ricevuto
-  sbar.exec("echo 'Click ricevuto sul widget brew: " .. (env.button or "unknown") .. "' >> /tmp/sketchybar_debug.log")
-  
-  if env.button == "left" then
-    -- Click sinistro: apri kitty con la lista dei pacchetti
-    sbar.exec("/Applications/kitty.app/Contents/MacOS/kitty --hold -e /usr/local/bin/brew outdated")
-  elseif env.button == "right" then
-    -- Click destro: aggiorna tutti i pacchetti
-    sbar.exec("/Applications/kitty.app/Contents/MacOS/kitty --hold -e sh -c '/usr/local/bin/brew upgrade; echo \"\\nAggiornamento completato. Premi un tasto per chiudere.\"; read -n 1'")
-  elseif env.button == "middle" then
-    -- Click centrale: forza aggiornamento manuale
-    sbar.exec("pkill -USR1 -f 'brew_check'")
-  end
-end)
+-- Azioni al click usando click_script diretto
+brew:set({
+  click_script = [[
+    # Cambia alla directory home dell'utente
+    cd $HOME
+    
+    BUTTON=$BUTTON
+    echo "Click ricevuto sul widget brew con pulsante: $BUTTON" >> /tmp/sketchybar_debug.log
+    
+    if [ "$BUTTON" = "left" ]; then
+      # Click sinistro: apri kitty con la lista dei pacchetti
+      /Applications/kitty.app/Contents/MacOS/kitty --hold -e /opt/homebrew/bin/brew outdated &
+    elif [ "$BUTTON" = "right" ]; then
+      # Click destro: aggiorna tutti i pacchetti
+      /Applications/kitty.app/Contents/MacOS/kitty --hold -e sh -c '/opt/homebrew/bin/brew upgrade; echo "\nAggiornamento completato. Premi un tasto per chiudere."; read -n 1' &
+    elif [ "$BUTTON" = "middle" ]; then
+      # Click centrale: forza aggiornamento manuale
+      pkill -USR1 -f 'brew_check'
+    fi
+  ]]
+})
 
 -- Aggiungi anche un evento per mouse.entered per confermare che gli eventi funzionano
 brew:subscribe("mouse.entered", function(env)
