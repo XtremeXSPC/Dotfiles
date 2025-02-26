@@ -40,6 +40,7 @@ local icons = {
       forward = "􀊌",
       play_pause = "􀊈",
     },
+    package = "📦 ",
   },
 
   -- Alternative NerdFont icons
@@ -82,6 +83,7 @@ local icons = {
       forward = "",
       play_pause = "",
     },
+    package = "󰏔",
   },
 }
 
