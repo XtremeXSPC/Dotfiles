@@ -164,6 +164,9 @@ export XDG_CONFIG_HOME="$HOME/.config"
 # C/C++ Libraries
 export CPATH=/opt/homebrew/include
 
+# LLVM
+export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+
 # Rust
 export PATH=$HOME/.cargo/bin:$PATH
 
@@ -441,6 +444,10 @@ ranger='TERM=screen-256color ranger'
 # Clang-Format alias
 alias clang-format='clang-format -style=file:$CLANG_FORMAT_CONFIG'
 
+# GCC Homebrew
+alias gcc='gcc-14'
+
 
 # =========================================================================== #
+
 

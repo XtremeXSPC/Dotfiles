@@ -10,10 +10,10 @@
 #include <unistd.h>
 
 // Dimensioni buffer più accurate e gestibili
-#define BREW_MAX_PACKAGE_NAME 128
-#define BREW_INITIAL_BUFFER_SIZE 1024
-#define BREW_MAX_BUFFER_SIZE 16384
-#define BREW_CMD_SIZE 512
+static const int BREW_MAX_PACKAGE_NAME    = 128;
+static const int BREW_INITIAL_BUFFER_SIZE = 1024;
+static const int BREW_MAX_BUFFER_SIZE     = 16384;
+static const int BREW_CMD_SIZE            = 512;
 
 // Codici di errore
 typedef enum {
@@ -22,7 +22,8 @@ typedef enum {
   BREW_ERROR_UPDATE_IN_PROGRESS,
   BREW_ERROR_MEMORY_ALLOCATION,
   BREW_ERROR_COMMAND_EXECUTION,
-  BREW_ERROR_INVALID_PARAMETER
+  BREW_ERROR_INVALID_PARAMETER,
+  BREW_ERROR_BUFFER_OVERFLOW
 } brew_error_t;
 
 // Struttura rivista con più informazioni utili
@@ -43,7 +44,7 @@ typedef struct brew {
  * @param brew Puntatore alla struttura brew da inizializzare
  * @return BREW_SUCCESS se l'inizializzazione ha avuto successo, codice di errore altrimenti
  */
-static inline brew_error_t brew_init(brew_t* brew) {
+[[nodiscard]] static inline brew_error_t brew_init(brew_t* brew) {
   if (!brew)
     return BREW_ERROR_INVALID_PARAMETER;
 
@@ -88,7 +89,7 @@ static inline void brew_cleanup(brew_t* brew) {
  *
  * @return true se Homebrew è installato, false altrimenti
  */
-static inline bool brew_is_installed(void) {
+[[nodiscard]] static inline bool brew_is_installed(void) {
   FILE* fp = popen("command -v brew 2>/dev/null", "r");
   if (!fp)
     return false;
@@ -107,11 +108,14 @@ static inline bool brew_is_installed(void) {
  * @param update_interval Intervallo minimo tra gli aggiornamenti in secondi
  * @return true se è necessario un aggiornamento, false altrimenti
  */
-static inline bool brew_needs_update(brew_t* brew, int update_interval) {
+[[nodiscard]] static inline bool brew_needs_update(const brew_t* brew, int update_interval) {
   if (!brew)
     return false;
 
   time_t current_time = time(NULL);
+  if (current_time == (time_t)-1) // Controllo errore di time()
+    return false;
+
   return (current_time - brew->last_update) >= update_interval;
 }
 
@@ -122,17 +126,22 @@ static inline bool brew_needs_update(brew_t* brew, int update_interval) {
  * @param needed_size Dimensione necessaria
  * @return BREW_SUCCESS se il ridimensionamento ha avuto successo, codice di errore altrimenti
  */
-static inline brew_error_t brew_resize_buffer(brew_t* brew, size_t needed_size) {
+[[nodiscard]] static inline brew_error_t brew_resize_buffer(brew_t* brew, size_t needed_size) {
   if (!brew || !brew->package_list)
     return BREW_ERROR_INVALID_PARAMETER;
+
+  if (needed_size >= BREW_MAX_BUFFER_SIZE)
+    return BREW_ERROR_BUFFER_OVERFLOW;
 
   // Calcola la nuova dimensione (raddoppia fino alla dimensione necessaria)
   size_t new_size = brew->package_list_size;
   while (new_size < needed_size) {
-    new_size *= 2;
-    if (new_size > BREW_MAX_BUFFER_SIZE) {
-      return BREW_ERROR_MEMORY_ALLOCATION;
+    if (new_size > BREW_MAX_BUFFER_SIZE / 2) {
+      // Evita overflow moltiplicando
+      new_size = BREW_MAX_BUFFER_SIZE;
+      break;
     }
+    new_size *= 2;
   }
 
   // Se la dimensione attuale è sufficiente, non fare nulla
@@ -157,7 +166,7 @@ static inline brew_error_t brew_resize_buffer(brew_t* brew, size_t needed_size) 
  * @param brew Puntatore alla struttura brew
  * @return BREW_SUCCESS se l'aggiornamento ha avuto successo, codice di errore altrimenti
  */
-static inline brew_error_t brew_update(brew_t* brew) {
+[[nodiscard]] static inline brew_error_t brew_update(brew_t* brew) {
   if (!brew)
     return BREW_ERROR_INVALID_PARAMETER;
 
@@ -176,6 +185,11 @@ static inline brew_error_t brew_update(brew_t* brew) {
 
   brew->update_in_progress = true;
   brew->last_check         = time(NULL);
+  if (brew->last_check == (time_t)-1) { // Controllo errore di time()
+    brew->update_in_progress = false;
+    brew->last_error         = BREW_ERROR_COMMAND_EXECUTION;
+    return BREW_ERROR_COMMAND_EXECUTION;
+  }
 
   // Esegui brew update silenziosamente per aggiornare il database
   int update_result = system("brew update > /dev/null 2>&1");
@@ -220,12 +234,24 @@ static inline brew_error_t brew_update(brew_t* brew) {
 
       // Aggiungi virgola se non è il primo elemento
       if (count > 0) {
-        strncat(brew->package_list, ",", brew->package_list_size - brew->package_list_used - 1);
+        size_t remaining = brew->package_list_size - brew->package_list_used - 1;
+        if (strncat(brew->package_list, ",", remaining) == NULL) {
+          pclose(fp);
+          brew->update_in_progress = false;
+          brew->last_error         = BREW_ERROR_BUFFER_OVERFLOW;
+          return BREW_ERROR_BUFFER_OVERFLOW;
+        }
         brew->package_list_used += 1;
       }
 
       // Aggiungi il pacchetto alla lista
-      strncat(brew->package_list, package, brew->package_list_size - brew->package_list_used - 1);
+      size_t remaining = brew->package_list_size - brew->package_list_used - 1;
+      if (strncat(brew->package_list, package, remaining) == NULL) {
+        pclose(fp);
+        brew->update_in_progress = false;
+        brew->last_error         = BREW_ERROR_BUFFER_OVERFLOW;
+        return BREW_ERROR_BUFFER_OVERFLOW;
+      }
       brew->package_list_used += strlen(package);
 
       count++;
@@ -234,8 +260,14 @@ static inline brew_error_t brew_update(brew_t* brew) {
 
   // Chiudi il pipe e aggiorna il conteggio
   pclose(fp);
-  brew->outdated_count     = count;
-  brew->last_update        = time(NULL);
+  brew->outdated_count = count;
+  brew->last_update    = time(NULL);
+  if (brew->last_update == (time_t)-1) { // Controllo errore di time()
+    brew->update_in_progress = false;
+    brew->last_error         = BREW_ERROR_COMMAND_EXECUTION;
+    return BREW_ERROR_COMMAND_EXECUTION;
+  }
+
   brew->update_in_progress = false;
   return BREW_SUCCESS;
 }
@@ -246,7 +278,7 @@ static inline brew_error_t brew_update(brew_t* brew) {
  * @param error Codice di errore
  * @return Stringa con il messaggio di errore
  */
-static inline const char* brew_error_string(brew_error_t error) {
+[[nodiscard]] static inline const char* brew_error_string(brew_error_t error) {
   switch (error) {
   case BREW_SUCCESS:
     return "Nessun errore";
@@ -260,6 +292,8 @@ static inline const char* brew_error_string(brew_error_t error) {
     return "Errore nell'esecuzione del comando";
   case BREW_ERROR_INVALID_PARAMETER:
     return "Parametro non valido";
+  case BREW_ERROR_BUFFER_OVERFLOW:
+    return "Overflow del buffer";
   default:
     return "Errore sconosciuto";
   }
