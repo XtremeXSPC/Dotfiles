@@ -217,6 +217,9 @@ export ZSH_COMPDUMP="$ZSH/cache/.zcompdump-$HOST"
 # LCS.Data Volume
 export LCS_Data="/Volumes/LCS.Data"
 
+# Configuration System Directory
+export CONFIG_DIR="$HOME/.config"
+
 # Clang-Format Configuration
 export CLANG_FORMAT_CONFIG="$HOME/.config/clang-format/.clang-format"
 
