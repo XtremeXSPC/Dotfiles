@@ -12,7 +12,8 @@ local CONFIG = {
   check_interval = 60,         -- Controllo ogni minuto
   update_interval = 900,       -- Aggiornamento database ogni 15 minuti
   brew_path = "/opt/homebrew/bin/brew",
-  terminal_app = "/Applications/kitty.app/Contents/MacOS/kitty",
+                               -- Argomenti per chiusura automatica del terminale
+  terminal_app = "/opt/homebrew/bin/kitty",  
   timeout = 120,               -- Timeout per operazioni in secondi
   debug = false,               -- Modalità debug
   hover_effect = true,         -- Effetto hover
@@ -54,32 +55,6 @@ local function safe_exec(command)
   end
   
   return true, result
-end
-
--- Helper per verificare che il percorso esista
-local function path_exists(path)
-  local success, _ = safe_exec("[ -e \"" .. path .. "\" ] && echo 'exists' || echo 'missing'")
-  return success and _.stdout and _.stdout:find("exists") ~= nil
-end
-
--- Controllo preliminare delle dipendenze
-local function check_dependencies()
-  if not path_exists(CONFIG.terminal_app) then
-    debug_log("AVVISO: Il terminale specificato non esiste: " .. CONFIG.terminal_app)
-    CONFIG.terminal_app = "open -a Terminal"
-  end
-  
-  if not path_exists(CONFIG.brew_path) then
-    debug_log("AVVISO: Brew non trovato in: " .. CONFIG.brew_path)
-    -- Tenta di trovare brew nel path
-    local success, result = safe_exec("which brew")
-    if success and result.stdout and result.stdout ~= "" then
-      CONFIG.brew_path = result.stdout:gsub("%s+$", "")
-      debug_log("Brew trovato in: " .. CONFIG.brew_path)
-    else
-      debug_log("ERRORE: Brew non trovato nel sistema")
-    end
-  end
 end
 
 -- Chiudi eventuali istanze precedenti e avvia il provider di eventi
@@ -153,9 +128,6 @@ local function run_in_terminal(widget, command, title, color)
     sbar.exec("sleep 2 && sketchybar --trigger brew_update")
   end)
 end
-
--- Controllo dipendenze prima di iniziare
-check_dependencies()
 
 -- Avvio del provider di eventi
 local provider_started = start_event_provider()
@@ -287,6 +259,27 @@ brew:set({
     TERMINAL="]] .. CONFIG.terminal_app .. [["
     BREW="]] .. CONFIG.brew_path .. [["
     
+    # Funzione per terminare processi kitty in background
+    cleanup_kitty() {
+      # Argomento 1: pattern di ricerca specifico
+      # Argomento 2: ritardo in secondi
+      local pattern="$1"
+      local delay="$2"
+      
+      # Attendi il ritardo specificato
+      sleep "$delay"
+      
+      # Cerca i PID dei processi kitty che corrispondono al pattern
+      local pids=$(ps -ef | grep -i "$pattern" | grep -v grep | awk '{print $2}')
+      
+      # Se ci sono PID, terminali
+      if [ -n "$pids" ]; then
+        for pid in $pids; do
+          kill "$pid" 2>/dev/null || kill -9 "$pid" 2>/dev/null
+        done
+      fi
+    }
+    
     # Gestione dei click in base al pulsante premuto
     case "$BUTTON" in
       "left")
@@ -294,8 +287,22 @@ brew:set({
         if [ "$(sketchybar --query $NAME | jq -r '.label.value')" != "0" ]; then
           # Feedback visivo
           sketchybar --set $NAME icon.color=]] .. FEEDBACK_COLORS.loading .. [[
-          # Esegui comando
-          "$TERMINAL" -e sh -c '$BREW outdated; echo ""; echo "Premi Invio per chiudere"; read' &
+          
+          # ID univoco per questo processo
+          SESSION_ID=$(date +%s%N)
+          
+          # Esegui il comando in kitty usando trap per catturare quando l'utente preme Invio
+          "$TERMINAL" -e sh -c "
+            trap 'exit 0' EXIT
+            $BREW outdated
+            echo \"\"
+            echo \"Premi Invio per chiudere\"
+            read
+          " &
+          
+          # Avvia cleanup in background
+          cleanup_kitty "kitty.*$BREW outdated" 10 &
+          
           # Reimposta colore dopo breve feedback
           sleep 0.3
           sketchybar --trigger brew_update
@@ -311,8 +318,35 @@ brew:set({
         if [ "$(sketchybar --query $NAME | jq -r '.label.value')" != "0" ]; then
           # Feedback visivo
           sketchybar --set $NAME icon.color=]] .. FEEDBACK_COLORS.updating .. [[
-          # Esegui comando di aggiornamento con gestione degli errori
-          "$TERMINAL" -e sh -c 'echo "⏳ Aggiornamento in corso..."; $BREW upgrade && echo "✅ Aggiornamento completato con successo!" || echo "❌ Si è verificato un errore durante l'aggiornamento"; echo ""; echo "Premi Invio per chiudere"; read' &
+          
+          # ID univoco per questo processo
+          SESSION_ID=$(date +%s%N)
+          
+          # Esegui comando con trap per assicurare la chiusura quando l'utente preme Invio
+          "$TERMINAL" -e sh -c "
+            trap 'exit 0' EXIT
+            $BREW upgrade && echo \"✅ Aggiornamento completato con successo!\" || echo \"❌ Si è verificato un errore durante l\\\"aggiornamento\"
+            echo \"\"
+            echo \"Premi Invio per chiudere\"
+            read
+          " &
+          
+          # Avvia cleanup in background che controlla se brew è ancora in esecuzione
+          (
+            # Attendi comunque almeno 20 secondi prima di iniziare a controllare
+            sleep 20
+            
+            # Controlla ogni 5 secondi se ci sono processi brew in esecuzione
+            while pgrep -f "$BREW upgrade" > /dev/null; do
+              sleep 5
+            done
+            
+            # Una volta che brew ha terminato, attendi altri 10 secondi per dare all'utente
+            # il tempo di leggere l'output e premere Invio, poi esegui il cleanup
+            sleep 10
+            cleanup_kitty "kitty.*$BREW upgrade" 0
+          ) &
+          
           # Reimposta il widget dopo un po' di tempo per dare tempo all'aggiornamento
           sleep 1
           sketchybar --trigger brew_update
