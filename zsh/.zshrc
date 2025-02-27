@@ -238,6 +238,61 @@ export OBSIDIAN_ATTACHMENTS_DIR="$HOME/Documents/Obsidian-Vault/XSPC-Vault/Blog/
 # ++++++++++++++++++++++ PERSONAL CONFIGURATION - THEMES ++++++++++++++++++++ #
 # =========================================================================== #
 
+# -------------------------------- VI-MODE ---------------------------------- #
+# Abilita modalità vi
+bindkey -v
+
+# Riduce il ritardo per il cambio modalità (0.1 secondi)
+export KEYTIMEOUT=10
+
+# Imposta la variabile per Oh-My-Posh
+export ZSH_VI_MODE="viins"
+
+# Funzione principale per aggiornare la modalità
+function update_vim_mode() {
+  export ZSH_VI_MODE="${KEYMAP}"
+  zle reset-prompt
+}
+
+# Collega agli eventi zle
+function zle-keymap-select() {
+  update_vim_mode
+}
+
+function zle-line-init() {
+  zle -K viins
+  update_vim_mode
+}
+
+zle -N zle-keymap-select
+zle -N zle-line-init
+
+# Funzioni esplicite per cambio modalità
+function vim_insert_mode() {
+  zle -K viins
+  update_vim_mode
+}
+
+function vim_normal_mode() {
+  zle -K vicmd
+  update_vim_mode
+}
+
+# Crea widget zle
+zle -N vim_insert_mode
+zle -N vim_normal_mode
+
+# Associa i tasti per il passaggio alla modalità inserimento
+bindkey -M vicmd 'i' vim_insert_mode
+bindkey -M vicmd 'I' vim_insert_mode
+bindkey -M vicmd 'a' vim_insert_mode
+bindkey -M vicmd 'A' vim_insert_mode
+bindkey -M vicmd 'o' vim_insert_mode
+bindkey -M vicmd 'O' vim_insert_mode
+
+# Associa ESC per il passaggio alla modalità normale
+bindkey -M viins '^[' vim_normal_mode
+
 # -------------------------------- PROMPT ----------------------------------- #
 # Powerlevel10k
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
@@ -401,12 +456,6 @@ vterm_printf() {
 # ++++++++++++++++++++++++++++++++ OTHERS +++++++++++++++++++++++++++++++++++ #
 # =========================================================================== #
 
-# Vim
-bindkey -v
-
-alias mysql=/usr/local/mysql/bin/mysql
-alias mysqladmin=/usr/local/mysql/bin/mysqladmin
-
 # -------------------------------- Aliases ---------------------------------- #
 
 # Dirs
@@ -441,13 +490,15 @@ ranger='TERM=screen-256color ranger'
 # Fastfetch
 # alias fastfetch-logo="$XDG_CONFIG_HOME/fastfetch/tmux_with_logo_fix.sh"
 
+# MySQL
+alias mysql=/usr/local/mysql/bin/mysql
+alias mysqladmin=/usr/local/mysql/bin/mysqladmin
+
 # Clang-Format alias
 alias clang-format='clang-format -style=file:$CLANG_FORMAT_CONFIG'
 
 # GCC Homebrew
 alias gcc='gcc-14'
 
-
 # =========================================================================== #
-
 
