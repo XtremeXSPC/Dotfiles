@@ -5,7 +5,7 @@ BasedOnStyle: LLVM
 PointerAlignment: Left
 
 # Limite per la lunghezza di ogni riga
-ColumnLimit: 100
+ColumnLimit: 140
 
 # Dimensione dell'indentazione (2 spazi per coerenza con il C/C++)
 IndentWidth: 2
