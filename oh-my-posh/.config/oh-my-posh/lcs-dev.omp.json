@@ -133,8 +133,10 @@
         {
           "type": "text",
           "style": "plain",
-          "foreground": "p:pistachio-green",
-          "template": "\uf101"
+          "foreground_templates": [
+            "{{ if .Env.ZSH_VI_MODE }}{{ if eq .Env.ZSH_VI_MODE \"vicmd\" }}p:terminal-red{{ else }}p:pistachio-green{{ end }}{{ else }}p:pistachio-green{{ end }}"
+          ],
+          "template": "{{ if .Env.ZSH_VI_MODE }}{{ if eq .Env.ZSH_VI_MODE \"vicmd\" }}\uf104{{ else }}\uf105{{ end }}{{ else }}\uf105{{ end }}"
         }
       ],
       "type": "prompt"
