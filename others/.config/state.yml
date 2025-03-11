@@ -1,9 +1,10 @@
 lastupdatecheck: 0
 recentrepos:
+    - /Users/lcs-dev/LCS.Data/Data-Structures
     - /Users/lcs-dev/LCS.Data/Dev-Projects
     - /Users/lcs-dev/Dotfiles
 startuppopupversion: 5
-lastversion: 0.47.2
+lastversion: 0.48.0
 customcommandshistory: []
 hidecommandlog: false
 ignorewhitespaceindiffview: false

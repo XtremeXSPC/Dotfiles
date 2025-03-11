@@ -179,7 +179,8 @@ export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 export PATH="$PATH:/Users/lcs-dev/.config/emacs/bin"
 
 # LaTeX
-export PATH="/usr/local/texlive/2024/bin/universal-darwin:$PATH"
+export PATH="/usr/local/texlive/2025/bin/universal-darwin:$PATH"
+export PATH="$PATH:/Library/TeX/texbin"
 
 # Java
 #export JAVA_HOME=$(/usr/libexec/java_home)

@@ -1,10 +1,131 @@
-theme = tokyonight
-font-family = "CaskaydiaCove Nerd Font"
-font-size = 15
-background-blur-radius = 20
+# ================================ General ================================== #
+
+# Font settings
+font-family = CaskaydiaCove Nerd Font Mono
+font-size = 14.5
+adjust-cell-height = 35%
+
+# ================================ Settings ================================= #
+window-padding-balance = true
+pad = 8
+window-save-state = always
+macos-titlebar-style = transparent
+window-colorspace = "display-p3"
+
+cursor-style = block
+shell-integration-features = no-cursor,sudo,no-title
+
 mouse-hide-while-typing = true
-window-decoration = true
-keybind = global:cmd+-=toggle_quick_terminal
-macos-option-as-alt = true
-# background-opacity = 0.7
-# background-blur-radius = 20
+mouse-scroll-multiplier = 2
+
+macos-option-as-alt = false
+macos-quit-after-last-window-closed = false
+
+scrollback = 10000
+
+# Tokyo Night color scheme
+background = 1a1b26
+foreground = a9b1d6
+
+# Selection colors
+selection = 28344a
+
+# Cursor colors
+cursor = c0caf5
+
+# URL colors
+hyperlinks = true
+hyperlink-color = 9ece6a
+
+# Window border colors
+window-focus-border = 3d59a1
+window-unfocus-border = 101014
+
+# Tokyo Night colors
+palette = 0=414868
+palette = 8=414868
+
+palette = 1=f7768e
+palette = 9=f7768e
+
+palette = 2=73daca
+palette = 10=73daca
+
+palette = 3=e0af68
+palette = 11=e0af68
+
+palette = 4=7aa2f7
+palette = 12=7aa2f7
+
+palette = 5=bb9af7
+palette = 13=bb9af7
+
+palette = 6=7dcfff
+palette = 14=7dcfff
+
+palette = 7=c0caf5
+palette = 15=c0caf5
+
+# ================================ Nerd Font Support ======================== #
+# Symbol mapping for Nerd Fonts
+font-feature = CaskaydiaCove Nerd Font Mono:liga=1
+
+# ================================ Keybindings ============================== #
+
+# Config management
+keybind = cmd+s>r=reload_config
+keybind = cmd+s>x=close_surface
+
+# Basic controls
+keybind = cmd+t=spawn:tab
+keybind = cmd+n=spawn:window
+
+# Navigate through text
+keybind = alt+left=send:\x1b[1;3D
+keybind = alt+right=send:\x1b[1;3C
+keybind = cmd+left=send:\x1bOH
+keybind = cmd+right=send:\x1bOF
+
+# Clipboard
+keybind = cmd+v=paste
+keybind = cmd+c=copy
+copy-on-select = clipboard
+
+# Tab management
+keybind = cmd+s>c=new_tab
+keybind = cmd+s>shift+l=next_tab
+keybind = cmd+s>shift+h=previous_tab
+keybind = cmd+s>comma=move_tab:-1
+keybind = cmd+s>period=move_tab:1
+
+# Quick tab switching
+keybind = cmd+s>1=goto_tab:1
+keybind = cmd+s>2=goto_tab:2
+keybind = cmd+s>3=goto_tab:3
+keybind = cmd+s>4=goto_tab:4
+keybind = cmd+s>5=goto_tab:5
+keybind = cmd+s>6=goto_tab:6
+keybind = cmd+s>7=goto_tab:7
+keybind = cmd+s>8=goto_tab:8
+keybind = cmd+s>9=goto_tab:9
+
+# Split window management
+keybind = cmd+s>\=new_split:right
+keybind = cmd+s>-=new_split:down
+
+keybind = cmd+s>j=goto_split:bottom
+keybind = cmd+s>k=goto_split:top
+keybind = cmd+s>h=goto_split:left
+keybind = cmd+s>l=goto_split:right
+
+keybind = cmd+s>z=toggle_split_zoom
+keybind = cmd+s>e=equalize_splits
+
+# Window management
+keybind = cmd+s>n=new_window
+keybind = cmd+w=close
+
+# Font size
+keybind = ctrl+shift+equal=font:increase
+keybind = ctrl+shift+minus=font:decrease
+keybind = ctrl+shift+0=font:reset
