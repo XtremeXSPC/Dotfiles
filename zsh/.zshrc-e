@@ -158,10 +158,6 @@ export PATH="/run/current-system/sw/bin:$PATH"
 export PATH=$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH
 # ------------ End Nix -------------- #
 
-# Haskell
-export PATH="$HOME/.local/bin:$PATH"
-[ -f "/Users/lcs-dev/.ghcup/env" ] && . "/Users/lcs-dev/.ghcup/env" # ghcup-env
-
 # Set up XDG Base Directory Specification
 export XDG_CONFIG_HOME="$HOME/.config"
 
@@ -471,7 +467,7 @@ alias .....="cd ../../../.."
 alias ......="cd ../../../../.."
 
 # Compile C++ programs
-alias compile="clang++ -std=c++20 -O3 -march=native -flto=thin -ffast-math -I/usr/local/include"
+alias compile="clang++ -std=c++17 -O3 -march=native -flto=thin -ffast-math"
 
 # Eza
 alias ls="eza --color=always --long --git --icons=always"
