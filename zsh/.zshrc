@@ -165,6 +165,9 @@ export PATH="$HOME/.local/bin:$PATH"
 # Set up XDG Base Directory Specification
 export XDG_CONFIG_HOME="$HOME/.config"
 
+# ADA Core
+export PATH=$HOME/.ada/bin:$PATH
+
 # C/C++ Libraries
 export CPATH=/opt/homebrew/include
 
@@ -504,6 +507,9 @@ alias clang-format='clang-format -style=file:$CLANG_FORMAT_CONFIG'
 
 # GCC Homebrew
 alias gcc='gcc-14'
+
+# LLDB
+alias lldb='/usr/bin/lldb'
 
 # =========================================================================== #
 
