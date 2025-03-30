@@ -43,11 +43,12 @@
   {
     # Build darwin flake using:
     # $ darwin-rebuild build --flake .#LCS-Dev-Mac-Studio
-    darwinConfigurations."LCS-Dev-Mac-Studio" = nix-darwin.lib.darwinSystem {
+    darwinConfigurations."LCSMacBook-Pro" = nix-darwin.lib.darwinSystem {
       modules = [ configuration ];
     };
 
     # Expose the package set, including overlays, for convenience.
-    darwinPackages = self.darwinConfigurations."LCS-Dev-Mac-Studio".pkgs;
+    darwinPackages = self.darwinConfigurations."LCSMacBook-Pro".pkgs;
+
   };
 }

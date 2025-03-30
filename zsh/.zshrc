@@ -2,16 +2,88 @@
 # +++++++++++++++++++++++++++ BASE CONFIGURATION ++++++++++++++++++++++++++++ #
 # =========================================================================== #
 
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-
-# if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-#   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-# fi
-
 # =============== Startup Commands =============== #
 # fastfetch
+
+# =============== Helper Functions ============== #
+# Function to check for duplicates in the PATH
+check_path_dupes() {
+  echo $PATH | tr ':' '\n' | sort | uniq -d
+}
+
+# Optimized function to configure the PATH in batch mode
+setup_path() {
+  # Initial base path
+  local base_path="/usr/bin:/bin:/usr/sbin:/sbin"
+  
+  # Array for directories to prepend (high priority)
+  local prepend_dirs=(
+    "/opt/homebrew/bin"
+    "$HOME/.local/bin"
+    "/usr/local/bin"
+    "$HOME/usr/local/bin"
+  )
+  
+  # Array for directories to append
+  local append_dirs=(
+    "$HOME/.nix-profile/bin"
+    "/nix/var/nix/profiles/default/bin"
+    "/run/current-system/sw/bin"
+    "$HOME/.cabal/bin"
+    "$HOME/.ghcup/bin"
+    "$HOME/.ada/bin"
+    "$HOME/.cargo/bin"
+    "$GOPATH/bin"
+    "$GOROOT/bin"
+    "$HOME/.config/emacs/bin"
+    "/opt/homebrew/opt/openjdk/bin"
+    "/opt/homebrew/opt/llvm/bin"
+    "/usr/local/texlive/2025/bin/universal-darwin"
+    "/Library/TeX/texbin"
+    "$ANDROID_HOME/tools"
+    "$ANDROID_HOME/tools/bin"
+    "$ANDROID_HOME/platform-tools"
+    "/usr/local/git/bin"
+    "/usr/local/mysql/bin"
+    "/opt/homebrew/opt/ncurses/bin"
+    "$HOME/00_ENV/miniforge3/bin"
+    "$HOME/00_ENV/miniforge3/condabin"
+    "$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
+  )
+  
+  # Build the prepend paths
+  local new_prepend=""
+  for dir in "${prepend_dirs[@]}"; do
+    if [[ -d "$dir" && ":$base_path:" != *":$dir:"* ]]; then
+      new_prepend="$dir:$new_prepend"
+    fi
+  done
+
+  # Modify the function to skip existence checks for some critical paths
+  for dir in "${append_dirs[@]}"; do
+    # Check if the path is critical (add paths here that MUST be included)
+    if [[ "$dir" == "$HOME/.nix-profile/bin"  ||
+          "$dir" == "$ANDROID_HOME/tools"     ||
+          "$dir" == "$ANDROID_HOME/tools/bin" ||
+          "$dir" == "/usr/local/git/bin" ]]; then
+      # Add without existence check
+      new_append="$new_append:$dir"
+    elif [[ -d "$dir" && ":$base_path:" != *":$dir:"* && ":$new_prepend:" != *":$dir:"* ]]; then
+      # Normal check for other paths
+      new_append="$new_append:$dir"
+    fi
+  done
+  
+  # Assemble the complete path
+  export PATH="${new_prepend}${base_path}${new_append}"
+}
+
+# =========================================================================== #
+# +++++++++++++++++++++++++++++ PATH CONFIGURATION ++++++++++++++++++++++++++ #
+# =========================================================================== #
+
+# Setup PATH in batch mode
+setup_path
 
 # =============== Terminal Variables ============= #
 if [ "$TERM" = "xterm-kitty" ]; then
@@ -20,114 +92,40 @@ else
     export TERM=xterm-256color
 fi
 
-# If you come from bash you might have to change your $PATH.
-#export PATH=$HOME/bin:/usr/local/bin:$PATH
-export PATH=$HOME/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:$PATH
-
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
-# Set name of the theme to load --- if set to "random", it will
-# load a random theme each time oh-my-zsh is loaded, in which case,
-# to know which specific one was loaded, run: echo $RANDOM_THEME
-# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
+# Set name of the theme to load
 ZSH_THEME="robbyrussell"
 
-# Set list of themes to pick from when loading at random
-# Setting this variable when ZSH_THEME=random will cause zsh to load
-# a theme from this variable instead of looking in $ZSH/themes/
-# If set to an empty array, this variable will have no effect.
-# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
+# Set up XDG Base Directory Specification
+export XDG_CONFIG_HOME="$HOME/.config"
 
-# Uncomment the following line to use case-sensitive completion.
-# CASE_SENSITIVE="true"
+# Set default editor
+export EDITOR="nvim"
 
-# Uncomment the following line to use hyphen-insensitive completion.
-# Case-sensitive completion must be off. _ and - will be interchangeable.
-# HYPHEN_INSENSITIVE="true"
-
-# Uncomment one of the following lines to change the auto-update behavior
-# zstyle ':omz:update' mode disabled  # disable automatic updates
-# zstyle ':omz:update' mode auto      # update automatically without asking
-# zstyle ':omz:update' mode reminder  # just remind me to update when it's time
-
-# Uncomment the following line to change how often to auto-update (in days).
-# zstyle ':omz:update' frequency 13
-
-# Uncomment the following line if pasting URLs and other text is messed up.
-# DISABLE_MAGIC_FUNCTIONS="true"
-
-# Uncomment the following line to disable colors in ls.
-# DISABLE_LS_COLORS="true"
-
-# Uncomment the following line to disable auto-setting terminal title.
-# DISABLE_AUTO_TITLE="true"
-
-# Uncomment the following line to enable command auto-correction.
-# ENABLE_CORRECTION="true"
-
-# Uncomment the following line to display red dots whilst waiting for completion.
-# You can also set it to another string to have that shown instead of the default red dots.
-# e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
-# Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
-# COMPLETION_WAITING_DOTS="true"
-
-# Uncomment the following line if you want to disable marking untracked files
-# under VCS as dirty. This makes repository status check for large repositories
-# much, much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
-
-# Uncomment the following line if you want to change the command execution time
-# stamp shown in the history command output.
-# You can set one of the optional three formats:
-# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
-# or set a custom format using the strftime function format specifications,
-# see 'man strftime' for details.
-# HIST_STAMPS="mm/dd/yyyy"
+# =========================================================================== #
+# +++++++++++++++++++++++++++++++ OH-MY-ZSH +++++++++++++++++++++++++++++++ #
+# =========================================================================== #
 
 # Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
 ZSH_CUSTOM=$HOME/.config/zsh
 
 # Which plugins would you like to load?
-# Standard plugins can be found in $ZSH/plugins/
-# Custom plugins may be added to $ZSH_CUSTOM/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-# Add wisely, as too many plugins slow down shell startup.
-plugins=( git
-          sudo
-          extract
-		      colored-man-pages
-          zsh-autosuggestions
-		      zsh-syntax-highlighting )
+# Note: zsh-syntax-highlighting must be the last plugin to work correctly
+plugins=( 
+    git
+    sudo
+    extract
+    colored-man-pages
+    zsh-autosuggestions
+    zsh-syntax-highlighting 
+)
 
 source $ZSH/oh-my-zsh.sh
 
-# User configuration
-
-# export MANPATH="/usr/local/man:$MANPATH"
-
-# You may need to manually set your language environment
-# export LANG=en_US.UTF-8
-
-# Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
-
-# Compilation flags
-# export ARCHFLAGS="-arch x86_64"
-
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
-# For a full list of active aliases, run `alias`.
-#
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
+# Cache di ZSH
+export ZSH_COMPDUMP="$ZSH/cache/.zcompdump-$HOST"
 
 # =========================================================================== #
 # +++++++++++++++++++++++++++ ENVIRONMENT VARIABLES +++++++++++++++++++++++++ #
@@ -145,80 +143,55 @@ function brew() {
     sketchybar --trigger brew_update
   fi
 }
-# ------------ End Homebrew --------- #
 
 # ------------ Nix ------------------ #
 if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
   . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
-elif [ -e '$HOME/.nix-profile/etc/profile.d/nix.sh' ]; then
-  . '$HOME/.nix-profile/etc/profile.d/nix.sh'
+elif [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+  . "$HOME/.nix-profile/etc/profile.d/nix.sh"
 fi
 
-export PATH="/run/current-system/sw/bin:$PATH"
-export PATH=$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH
-# ------------ End Nix -------------- #
+# Note: Nix paths are already configured in the setup_path function
 
-# Haskell
-export PATH="$HOME/.local/bin:$PATH"
-[ -f "/Users/lcs-dev/.ghcup/env" ] && . "/Users/lcs-dev/.ghcup/env" # ghcup-env
+# =========================================================================== #
+# +++++++++++++++++++++ LINGUAGGI E STRUMENTI DI SVILUPPO ++++++++++++++++++ #
+# =========================================================================== #
 
-# Set up XDG Base Directory Specification
-export XDG_CONFIG_HOME="$HOME/.config"
+# Nota: tutti i percorsi sono già configurati nella funzione setup_path 
+# all'inizio del file
 
-# ADA Core
-export PATH=$HOME/.ada/bin:$PATH
+# Haskell (ghcup-env)
+[ -f "/Users/lcs-dev/.ghcup/env" ] && . "/Users/lcs-dev/.ghcup/env"
 
 # C/C++ Libraries
 export CPATH=/opt/homebrew/include
 
-# LLVM
-export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
-
-# Rust
-export PATH=$HOME/.cargo/bin:$PATH
-
 # GO Language 
 export GOROOT=/usr/local/go
 export GOPATH=$HOME/00_ENV/go
-export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-
-# Emacs
-export PATH="$PATH:/Users/lcs-dev/.config/emacs/bin"
-
-# LaTeX
-export PATH="/usr/local/texlive/2025/bin/universal-darwin:$PATH"
-export PATH="$PATH:/Library/TeX/texbin"
 
 # Java
 #export JAVA_HOME=$(/usr/libexec/java_home)
 
 # OpenJDK
-export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
 export CPPFLAGS="-I/opt/homebrew/opt/openjdk/include"
 
 # Android ADB
 export ANDROID_HOME="$HOME/Library/Android/Sdk"
-export PATH="$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$PATH"
 
-# NVM
-export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+# NVM - It's necessary to load nvm path here before call to setup_path
+# export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+# This loads nvm
+# [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh" 
+# This loads nvm bash_completion
+# [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
 
-# Git
-export PATH="/usr/local/git/bin:$PATH"
-export PATH="/opt/homebrew/opt/ncurses/bin:$PATH"
-
-# Miniforge3
-export PATH="$PATH:$HOME/00_ENV/miniforge3/bin"
-
-# Toolbox App
-export PATH="$PATH:/Users/lcs-dev/Library/Application Support/JetBrains/Toolbox/scripts"
-
-# MySQL
-export PATH="/usr/local/mysql/bin:$PATH"
-
-# ZSH Cache
-export ZSH_COMPDUMP="$ZSH/cache/.zcompdump-$HOST"
+# FNM (Fast Node Manager)
+FNM_PATH="/opt/homebrew/bin/fnm"
+if [ -d "$FNM_PATH" ]; then
+  export PATH="/opt/homebrew/bin/fnm:$PATH"
+fi
+eval "$(fnm env --use-on-cd --shell zsh)"
 
 # =========================================================================== #
 # +++++++++++++++++++++++++++ GLOBAL VARIABLES ++++++++++++++++++++++++++++++ #
@@ -227,6 +200,10 @@ export ZSH_COMPDUMP="$ZSH/cache/.zcompdump-$HOST"
 # -------------------------------- Directories ------------------------------ #
 # LCS.Data Volume
 export LCS_Data="/Volumes/LCS.Data"
+# Check if the volume is already mounted
+if [ ! -d "$LCS_Data" ]; then
+  echo "⚠️  Attenzione: Il volume LCS.Data non è montato"
+fi
 
 # Configuration System Directory
 export CONFIG_DIR="$HOME/.config"
@@ -236,7 +213,6 @@ export CLANG_FORMAT_CONFIG="$HOME/.config/clang-format/.clang-format"
 
 # -------------------------------- BLOG ------------------------------------- #
 # Variables for Blog Automation
-
 export BLOG_POSTS_DIR="$LCS_Data/Blog/CS-Topics/content/posts/"
 export BLOG_STATIC_IMAGES_DIR="$LCS_Data/Blog/CS-Topics/static/images"
 export IMAGES_SCRIPT_PATH="$LCS_Data/Blog/Automatic-Updates/images.py"
@@ -302,17 +278,8 @@ bindkey -M vicmd 'O' vim_insert_mode
 bindkey -M viins '^[' vim_normal_mode
 
 # -------------------------------- PROMPT ----------------------------------- #
-# Powerlevel10k
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-# [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-# source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
-
-# Oh My Posh
-# eval "$(oh-my-posh init zsh --config $(brew --prefix oh-my-posh)/themes/tokyo-night.omp.json)"
+# Oh My Posh - Prompt personalizzato
 eval "$(oh-my-posh init zsh --config $XDG_CONFIG_HOME/oh-my-posh/lcs-dev.omp.json)"
-
-# Starship
-# eval "$(starship init zsh)"
 
 # --------------------------------- COLORS ---------------------------------- #
 # --------------- FZF --------------- #
@@ -320,27 +287,6 @@ eval "$(oh-my-posh init zsh --config $XDG_CONFIG_HOME/oh-my-posh/lcs-dev.omp.jso
 eval "$(fzf --zsh)"
 
 _gen_fzf_default_opts() {
-
-# --------- Setup FZF theme --------- #
-# Scheme name: Gruvbox dark, soft
-
-# local color00='#32302f'
-# local color01='#3c3836'
-# local color02='#504945'
-# local color03='#665c54'
-# local color04='#bdae93'
-# local color05='#d5c4a1'
-# local color06='#ebdbb2'
-# local color07='#fbf1c7'
-# local color08='#fb4934'
-# local color09='#fe8019'
-# local color0A='#fabd2f'
-# local color0B='#b8bb26'
-# local color0C='#8ec07c'
-# local color0D='#83a598'
-# local color0E='#d3869b'
-# local color0F='#d65d0e'
-
 # ---------- Setup FZF theme -------- #
 # Scheme name: Tokyo Night
 
@@ -361,25 +307,20 @@ local color0D='#7aa2f7'  # blue
 local color0E='#bb9af7'  # purple
 local color0F='#cfc9c2'  # grey/white
 
-
 export FZF_DEFAULT_OPTS="$FZF_DEFAULT_OPTS"\
 " --color=bg+:$color01,bg:$color00,spinner:$color0C,hl:$color0D"\
 " --color=fg:$color04,header:$color0D,info:$color0A,pointer:$color0C"\
 " --color=marker:$color0C,fg+:$color06,prompt:$color0A,hl+:$color0D"
-
 }
 
 _gen_fzf_default_opts
 
 # ------ Use fd instead of fzf ------ #
-
 export FZF_DEFAULT_COMMAND="fd --hidden --strip-cwd-prefix --exclude .git"
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_ALT_C_COMMAND="fd --type=d --hidden --strip-cwd-prefix --exclude .git"
 
 # Use fd (https://github.com/sharkdp/fd) for listing path candidates.
-# - The first argument to the function ($1) is the base path to start traversal
-# - See the source code (completion.{bash,zsh}) for the details.
 _fzf_compgen_path() {
   fd --hidden --exclude .git . "$1"
 }
@@ -395,8 +336,6 @@ export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always --line-range :500 {}'"
 export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always {} | head -200'"
 
 # Advanced customization of fzf options via _fzf_comprun function
-# - The first argument to the function is the name of the command.
-# - You should make sure to pass the rest of the arguments to fzf.
 _fzf_comprun() {
   local command=$1
   shift
@@ -424,8 +363,10 @@ if command -v ngrok &>/dev/null; then
     eval "$(ngrok completion)"
 fi
 
-# Load Angular CLI autocompletion.
-source <(ng completion script)
+# ----------- Angular CLI ----------- #
+if command -v ng &>/dev/null; then
+    source <(ng completion script)
+fi
 
 # -------------- PyENV -------------- #
 export PYENV_ROOT="$HOME/.pyenv"
@@ -461,10 +402,8 @@ vterm_printf() {
 }
 
 # =========================================================================== #
-# ++++++++++++++++++++++++++++++++ OTHERS +++++++++++++++++++++++++++++++++++ #
+# ++++++++++++++++++++++++++++++++ ALIASES +++++++++++++++++++++++++++++++++++ #
 # =========================================================================== #
-
-# -------------------------------- Aliases ---------------------------------- #
 
 # Dirs
 alias ..="cd .."
@@ -476,14 +415,16 @@ alias ......="cd ../../../../.."
 # Compile C++ programs
 alias compile="clang++ -std=c++20 -O3 -march=native -flto=thin -ffast-math -I/usr/local/include"
 
-# Eza
+# Eza (sostituto moderno di ls)
 alias ls="eza --color=always --long --git --icons=always"
 
-# thefuck alias
-eval $(thefuck --alias)
-eval $(thefuck --alias fk)
+# thefuck alias (corregge i comandi digitati male)
+eval $(thefuck --alias)       # Crea l'alias "fuck"
+eval $(thefuck --alias fk)    # Crea l'alias più breve "fk"
 
-# Zoxide 
+# Zoxide (sostituto intelligente di cd)
+# Nota: questo alias sovrascrive completamente il comando cd nativo
+# Se hai problemi con script che si aspettano il comportamento standard di cd, rimuovi questa riga
 alias cd="z"
 
 # Clear terminal
@@ -492,11 +433,8 @@ alias c="clear"
 # Tailscale
 alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 
-# Ranger
-ranger='TERM=screen-256color ranger'
-
-# Fastfetch
-# alias fastfetch-logo="$XDG_CONFIG_HOME/fastfetch/tmux_with_logo_fix.sh"
+# Ranger (file manager da terminale)
+alias ranger='TERM=screen-256color ranger'
 
 # MySQL
 alias mysql=/usr/local/mysql/bin/mysql
