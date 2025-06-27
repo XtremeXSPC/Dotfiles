@@ -90,10 +90,10 @@ yabai -m rule --add \
 yabai -m rule --add \
     label="Android Studio" \
     app="^.*Android Studio.*$" \
-    title="^(.*About.*|.*Android.*|.*Configurations?.*|.*Debug.*|.*Delete.*|.*devices?.*|.*Files?.*| \
-             .*Installations?.*|.*Errors?.*|.*Lines?.*|.*Log.*|.*JetBrains.*|.*Move.*|               \
-             .*Studio.*|.*SDK.*|.*Plugins?.*|.*Projects?.*|.*Provide?.*|.*Rename.*|.*Resources?.*|   \
-             .*Tip of the Day.*|.*Updates?.*|.*Welcome.*)$" \
+    title="^(.*About.*|.*Android.*|.*Configurations?.*|.*Debug.*|.*Delete.*|.*Device.*|.*devices?.*| \
+             .*Files?.*|.*Installations?.*|.*Errors?.*|.*Lines?.*|.*Log.*|.*JetBrains.*|.*Move.*|    \
+             .*Studio.*|.*SDK.*|.*Plugins?.*|.*Projects?.*|.*Provide?.*|.*Process?.*|.*Rename.*|     \
+             .*Resources?.*|.*Tip of the Day.*|.*Updates?.*|.*Welcome.*)$" \
     manage=off
 
 # +++++++++++++++++++++++++++++++++ Eclipse ++++++++++++++++++++++++++++++++++ #
