@@ -48,6 +48,7 @@ setup_path() {
     "/opt/homebrew/opt/ncurses/bin"
     "$HOME/00_ENV/miniforge3/bin"
     "$HOME/00_ENV/miniforge3/condabin"
+    "$HOME/.lcs-bin"
     "$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
   )
   
