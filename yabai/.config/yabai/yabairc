@@ -8,7 +8,7 @@
 
 sudo yabai --load-sa
 yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
-yabai -m signal --add event=window_focused action="sketchybar --trigger window_focus"yabai -m signal --add event=window_focused action="sketchybar --trigger window_focus"
+yabai -m signal --add event=window_focused action="sketchybar --trigger window_focus"
 # yabai -m signal --add label="flash_focus"       \
 #                       event="window_focused"    \
 #                       action="yabai -m window \$YABAI_WINDOW_ID --opacity 0.9 &&           \
@@ -53,10 +53,10 @@ yabai -m rule --add app="kitty" opacity=0.9875
 # ========================== Disabling Rules ================================= #
 
 # Exclude problematic apps from being managed:
-EXCLUDED_APPS="Activity Monitor|App Store|Archive Utility|BetterDisplay|Calculator|CleanMyMac|Dictionary|Finder| \
-               Photo Booth|Software Update|System Preferences|System Settings|TextEdit|1Password|    \
-               Alfred|Company Portal|Google Drive|LocalSend|Microsoft OneDrive|Python|Steam| \
-               Sudoku|Tailscale|Transmission|The Unarchiver|VLC"
+EXCLUDED_APPS="Activity Monitor|App Store|Archive Utility|BetterDisplay|Calculator|CleanMyMac| \
+               Dictionary|Finder|Photo Booth|Software Update|System Preferences|System Settings| \
+               TextEdit|1Password|Alfred|Company Portal|Google Drive|LocalSend|Microsoft OneDrive| \
+               Python|Steam|Sudoku|Tailscale|Transmission|The Unarchiver|VLC"
 
 yabai -m rule --add app="^($EXCLUDED_APPS)$" manage=off
 
@@ -73,6 +73,10 @@ yabai -m rule --add label="Safari" app="^Safari$" \
 # Exclude "About This Mac" specific windows from being managed
 yabai -m rule --add label="About This Mac" app="System Information" title="About This Mac" manage=off
 
+# Exclune "Neural DSP Plugins"
+NEURAL_DSP="Archetype Tim Henson X|Archetype Petrucci X"
+yabai -m rule --add app="^(${NEURAL_DSP})$" manage=off
+
 # +++++++++++++++++++++++++++++ JetBrains IDEs +++++++++++++++++++++++++++++++ #
 
 # Exclude JetBrains IDEs specific windows from being managed
@@ -82,7 +86,7 @@ JETBRAINS_IDEs="CLion|CLion-EAP|DataGrip|DataGrip-EAP|GoLand-EAP|IntelliJ IDEA|I
 yabai -m rule --add \
     app="^($JETBRAINS_IDEs)$" \
     title="^(.*Configurations?.*|.*Debug.*|.*Delete.*|.*devices?.*|.*Files?.*|.*Installations?.*|.*Errors?.*| \
-             .*Licenses?.*|.*Lines?.*|.*Log.*|.*JetBrains.*|.*Move.*|.*Plugins?.*|.*Projects?.*|.*Rename.*|   \
+             .*Licenses?.*|.*Lines?.*|.*Log.*|.*JetBrains.*|.*Move.*|.*Plugins?.*|.*Projects?.*|.*Rename.*| \
              .*Resources?.*|.*Tip of the Day.*|.*Updates?.*|.*Welcome.*)$" \
     manage=off
 
@@ -91,8 +95,8 @@ yabai -m rule --add \
     label="Android Studio" \
     app="^.*Android Studio.*$" \
     title="^(.*About.*|.*Android.*|.*Configurations?.*|.*Debug.*|.*Delete.*|.*Device.*|.*devices?.*| \
-             .*Files?.*|.*Installations?.*|.*Errors?.*|.*Lines?.*|.*Log.*|.*JetBrains.*|.*Move.*|    \
-             .*Studio.*|.*SDK.*|.*Plugins?.*|.*Projects?.*|.*Provide?.*|.*Process?.*|.*Rename.*|     \
+             .*Files?.*|.*Installations?.*|.*Errors?.*|.*Lines?.*|.*Log.*|.*JetBrains.*|.*Move.*| \
+             .*Studio.*|.*SDK.*|.*Plugins?.*|.*Projects?.*|.*Provide?.*|.*Process?.*|.*Rename.*| \
              .*Resources?.*|.*Tip of the Day.*|.*Updates?.*|.*Welcome.*)$" \
     manage=off
 
@@ -119,18 +123,18 @@ yabai -m rule --add label="VNC Viewer" \
 yabai -m config layout bsp
 echo "yabai configuration loaded..."
 
-# ++++++++++++++++++++++++++++++ Border Style ++++++++++++++++++++++++++++++++ #
-: << 'EOF'
-borders     style=round                 \
-            width=5.0                   \
-            hidpi=off                   \
-            blur_radius=100             \
-            background_color=0x993c3836 \
-            active_color="gradient(top_left=0xfffe8019,bottom_right=0xffcc241d,top_right=0xfffb4934,bottom_left=0xfffabd2f)" \
-            blacklist="JetBrains-Toolbox,CLion,CLion-Nova,IntelliJ IDEA Ultimate,
-                   PyCharm Professional Edition,GoLand,WebStorm,DataGrip,PhpStorm,
-                   Rider,RustRover-EAP" \
-            inactive_color=0xE63c3836   \
-EOF 
 
+# ++++++++++++++++++++++++++++++ Border Style ++++++++++++++++++++++++++++++++ #
+
+# borders style=round                 \
+#         width=5.0                   \
+#         hidpi=off                   \
+#         blur_radius=100             \
+#         background_color=0x993c3836 \
+#         active_color="gradient(top_left=0xfffe8019,bottom_right=0xffcc241d,top_right=0xfffb4934,bottom_left=0xfffabd2f)" \
+#         blacklist="JetBrains-Toolbox,CLion,CLion-Nova,IntelliJ IDEA Ultimate,
+#                    PyCharm Professional Edition,GoLand,WebStorm,DataGrip,PhpStorm,
+#                    Rider,RustRover-EAP" \
+#         inactive_color=0xE63c3836       \
+ 
 # =========================== End Other Stuff ================================ #
