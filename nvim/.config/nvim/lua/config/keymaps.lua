@@ -3,10 +3,10 @@
 -- Add any additional keymaps here
 
 vim.keymap.set("n", "<leader>sx", function()
-  local status, builtin = pcall(require, "telescope.builtin")
-  if status then
-    builtin.resume()
-  else
-    vim.notify("Telescope is not available", vim.log.levels.ERROR)
-  end
+    local status, builtin = pcall(require, "telescope.builtin")
+    if status then
+        builtin.resume()
+    else
+        vim.notify("Telescope is not available", vim.log.levels.ERROR)
+    end
 end, { noremap = true, silent = true, desc = "Resume" })

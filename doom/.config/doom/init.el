@@ -18,6 +18,9 @@
 (add-to-list 'default-frame-alist '(width  . 240))
 (add-to-list 'default-frame-alist '(height .  70))
 
+;; C/C++ Configs
+(add-to-list 'auto-mode-alist '("\\.\\(c\\|h\\|inc\\|src\\)\\'" . c-mode))
+(add-to-list 'auto-mode-alist '("\\.\\(|hh\\|cc\\|c++\\|cpp\\|tpp\\|hpp\\|hxx\\|cxx\\|inl\\|cu\\)'" . c++-mode))
 
 (doom! :input
        ;;bidi              ; (tfel ot) thgir etirw uoy gnipleh

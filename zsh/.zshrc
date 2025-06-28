@@ -22,6 +22,7 @@ setup_path() {
     "$HOME/.local/bin"
     "/usr/local/bin"
     "$HOME/usr/local/bin"
+    "/opt/homebrew/opt/llvm/bin"
   )
   
   # Array for directories to append
@@ -36,8 +37,7 @@ setup_path() {
     "$GOPATH/bin"
     "$GOROOT/bin"
     "$HOME/.config/emacs/bin"
-    "/opt/homebrew/opt/openjdk/bin"
-    "/opt/homebrew/opt/llvm/bin"
+    "/opt/homebrew/opt/openjdk/bin" 
     "/usr/local/texlive/2025/bin/universal-darwin"
     "/Library/TeX/texbin"
     "$ANDROID_HOME/tools"
@@ -92,6 +92,10 @@ if [ "$TERM" = "xterm-kitty" ]; then
 else
     export TERM=xterm-256color
 fi
+
+# LLVM Flags
+export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
+export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -445,7 +449,7 @@ alias mysqladmin=/usr/local/mysql/bin/mysqladmin
 alias clang-format='clang-format -style=file:$CLANG_FORMAT_CONFIG'
 
 # GCC Homebrew
-alias gcc='gcc-14'
+alias gcc='gcc-15'
 
 # LLDB
 alias lldb='/usr/bin/lldb'

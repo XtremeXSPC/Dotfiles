@@ -1,3 +1,23 @@
+# File: ~/.config/nvim/stylua.toml
+
+# La larghezza massima della colonna prima che il formattatore tenti di andare a capo.
+column_width = 100
+
+# Il tipo di interruzione di riga. "Unix" è lo standard (LF).
+line_endings = "Unix"
+
+# Usa spazi per l'indentazione.
 indent_type = "Spaces"
-indent_width = 4
-column_width = 120
+
+# La larghezza dell'indentazione. 4 è uno standard comune per Lua.
+indent_width = 2
+
+# Preferisce le virgolette doppie ("") per le stringhe.
+quote_style = "AutoPreferDouble"
+
+# Non aggiungere parentesi nelle chiamate a funzione con una singola tabella come argomento.
+# Questo è FONDAMENTALE per lo stile delle configurazioni di Neovim (es. `require("plugin").setup{...}`).
+call_parentheses = "NoSingleTable"
+
+# Cerca di mantenere le tabelle e le istruzioni semplici su una singola riga.
+collapse_simple_statement = "Always"
