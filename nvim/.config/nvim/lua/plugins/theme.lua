@@ -4,7 +4,7 @@ return {
     priority = 1000, -- Assegna alta priorità per garantire che venga caricato per primo
     opts = {
         style = "night", -- Scegli lo stile preferito (storm, night, moon, day)
-        transparent = false, 
+        transparent = false,
         terminal_colors = true,
     },
     config = function(_, opts)
