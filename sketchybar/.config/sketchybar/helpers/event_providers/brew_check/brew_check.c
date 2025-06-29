@@ -127,10 +127,9 @@ static void check_and_notify(void) {
   // Prepara e invia la notifica a sketchybar
   char trigger_message[MAX_MESSAGE_LENGTH];
   int  message_len = snprintf(
-      trigger_message, sizeof(trigger_message),
-      "--trigger '%s' outdated_count='%d' pending_updates='%s' last_check='%ld' error='%s'",
-      event_name, brew_state.outdated_count, brew_state.package_list ? brew_state.package_list : "",
-      (long)brew_state.last_check, brew_error_string(brew_state.last_error));
+      trigger_message, sizeof(trigger_message), "--trigger '%s' outdated_count='%d' pending_updates='%s' last_check='%ld' error='%s'",
+      event_name, brew_state.outdated_count, brew_state.package_list ? brew_state.package_list : "", (long)brew_state.last_check,
+      brew_error_string(brew_state.last_error));
 
   // Verifica overflow o errori del buffer
   if (message_len < 0) {
@@ -182,8 +181,7 @@ int main(int argc, char** argv) {
 
   // Analizza argomenti aggiuntivi e opzioni
   if (strlen(argv[1]) >= MAX_EVENT_NAME_LENGTH) {
-    fprintf(
-        stderr, "Errore: nome evento troppo lungo (max %d caratteri)\n", MAX_EVENT_NAME_LENGTH - 1);
+    fprintf(stderr, "Errore: nome evento troppo lungo (max %d caratteri)\n", MAX_EVENT_NAME_LENGTH - 1);
     return 1;
   }
 
@@ -204,25 +202,20 @@ int main(int argc, char** argv) {
     } else if (i == 3 && argv[i][0] != '-') {
       // Assume che il terzo argomento sia l'intervallo di aggiornamento se non è un'opzione
       if (sscanf(argv[i], "%d", &update_interval) != 1 || update_interval <= 0) {
-        fprintf(
-            stderr, "Avviso: intervallo di aggiornamento non valido, uso valore predefinito %d\n",
-            DEFAULT_UPDATE_INTERVAL);
+        fprintf(stderr, "Avviso: intervallo di aggiornamento non valido, uso valore predefinito %d\n", DEFAULT_UPDATE_INTERVAL);
         update_interval = DEFAULT_UPDATE_INTERVAL;
       }
     }
   }
 
-  log_message(
-      "Avvio con evento '%s', frequenza %.2fs, intervallo di aggiornamento %ds", event_name,
-      check_frequency, update_interval);
+  log_message("Avvio con evento '%s', frequenza %.2fs, intervallo di aggiornamento %ds", event_name, check_frequency, update_interval);
 
   // Configura gestori di segnali
   struct sigaction sa = {0}; // Zero-inizializzazione usando C23
   sa.sa_handler       = handle_signal;
   sigemptyset(&sa.sa_mask);
 
-  if (sigaction(SIGINT, &sa, NULL) == -1 || sigaction(SIGTERM, &sa, NULL) == -1
-      || sigaction(SIGHUP, &sa, NULL) == -1) {
+  if (sigaction(SIGINT, &sa, NULL) == -1 || sigaction(SIGTERM, &sa, NULL) == -1 || sigaction(SIGHUP, &sa, NULL) == -1) {
     fprintf(stderr, "Errore nella configurazione dei gestori di segnali: %s\n", strerror(errno));
     return 1;
   }
@@ -248,8 +241,7 @@ int main(int argc, char** argv) {
 
   // Configuriamo l'evento in sketchybar
   char event_message[MAX_MESSAGE_LENGTH];
-  int  event_msg_len =
-      snprintf(event_message, sizeof(event_message), "--add event '%s'", event_name);
+  int  event_msg_len = snprintf(event_message, sizeof(event_message), "--add event '%s'", event_name);
   if (event_msg_len < 0 || event_msg_len >= (int)sizeof(event_message)) {
     log_message("Errore nella formattazione del messaggio evento");
     cleanup_and_exit(1);
@@ -265,9 +257,7 @@ int main(int argc, char** argv) {
   unsigned long              sleep_microseconds    = (unsigned long)(check_frequency * 1000000);
   static const unsigned long MAX_SAFE_MICROSECONDS = ULONG_MAX / 2;
   if (sleep_microseconds > MAX_SAFE_MICROSECONDS || sleep_microseconds == 0) {
-    log_message(
-        "Avviso: intervallo di %f s non valido, limitato a %lu s", check_frequency,
-        MAX_SAFE_MICROSECONDS / 1000000);
+    log_message("Avviso: intervallo di %f s non valido, limitato a %lu s", check_frequency, MAX_SAFE_MICROSECONDS / 1000000);
     sleep_microseconds = MAX_SAFE_MICROSECONDS;
   }
 

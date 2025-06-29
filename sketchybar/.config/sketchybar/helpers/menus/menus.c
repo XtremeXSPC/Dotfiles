@@ -22,8 +22,8 @@ static const int CLICK_DELAY_MICROSECONDS = 150000; // 150ms
   const void* values[] = {kCFBooleanTrue};
 
   CFDictionaryRef options = CFDictionaryCreate(
-      kCFAllocatorDefault, keys, values, sizeof(keys) / sizeof(*keys),
-      &kCFCopyStringDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+      kCFAllocatorDefault, keys, values, sizeof(keys) / sizeof(*keys), &kCFCopyStringDictionaryKeyCallBacks,
+      &kCFTypeDictionaryValueCallBacks);
 
   if (!options) {
     fprintf(stderr, "Errore nella creazione del dizionario opzioni\n");
@@ -89,12 +89,10 @@ static void ax_select_menu_option(AXUIElementRef app, int id) {
   AXUIElementRef menubars_ref = NULL;
   CFArrayRef     children_ref = NULL;
 
-  AXError error =
-      AXUIElementCopyAttributeValue(app, kAXMenuBarAttribute, (CFTypeRef*)&menubars_ref);
+  AXError error = AXUIElementCopyAttributeValue(app, kAXMenuBarAttribute, (CFTypeRef*)&menubars_ref);
 
   if (error == kAXErrorSuccess && menubars_ref) {
-    error = AXUIElementCopyAttributeValue(
-        menubars_ref, kAXVisibleChildrenAttribute, (CFTypeRef*)&children_ref);
+    error = AXUIElementCopyAttributeValue(menubars_ref, kAXVisibleChildrenAttribute, (CFTypeRef*)&children_ref);
 
     if (error == kAXErrorSuccess && children_ref) {
       CFIndex count = CFArrayGetCount(children_ref);
@@ -120,12 +118,10 @@ static void ax_print_menu_options(AXUIElementRef app) {
   AXUIElementRef menubars_ref = NULL;
   CFArrayRef     children_ref = NULL;
 
-  AXError error =
-      AXUIElementCopyAttributeValue(app, kAXMenuBarAttribute, (CFTypeRef*)&menubars_ref);
+  AXError error = AXUIElementCopyAttributeValue(app, kAXMenuBarAttribute, (CFTypeRef*)&menubars_ref);
 
   if (error == kAXErrorSuccess && menubars_ref) {
-    error = AXUIElementCopyAttributeValue(
-        menubars_ref, kAXVisibleChildrenAttribute, (CFTypeRef*)&children_ref);
+    error = AXUIElementCopyAttributeValue(menubars_ref, kAXVisibleChildrenAttribute, (CFTypeRef*)&children_ref);
 
     if (error == kAXErrorSuccess && children_ref) {
       CFIndex count = CFArrayGetCount(children_ref);
@@ -138,9 +134,8 @@ static void ax_print_menu_options(AXUIElementRef app) {
           CFIndex title_length = CFStringGetLength(title);
           if (title_length > 0) {
             // Allocazione sicura del buffer per la stringa
-            CFIndex buffer_size =
-                CFStringGetMaximumSizeForEncoding(title_length, kCFStringEncodingUTF8) + 1;
-            char* buffer = (char*)malloc(buffer_size);
+            CFIndex buffer_size = CFStringGetMaximumSizeForEncoding(title_length, kCFStringEncodingUTF8) + 1;
+            char*   buffer      = (char*)malloc(buffer_size);
 
             if (buffer) {
               if (CFStringGetCString(title, buffer, buffer_size, kCFStringEncodingUTF8)) {
@@ -240,8 +235,7 @@ static void ax_print_menu_options(AXUIElementRef app) {
 
   AXError error = AXUIElementCopyAttributeValue(app, kAXExtrasMenuBarAttribute, &extras);
   if (error == kAXErrorSuccess && extras) {
-    error = AXUIElementCopyAttributeValue(
-        extras, kAXVisibleChildrenAttribute, (CFTypeRef*)&children_ref);
+    error = AXUIElementCopyAttributeValue(extras, kAXVisibleChildrenAttribute, (CFTypeRef*)&children_ref);
 
     if (error == kAXErrorSuccess && children_ref) {
       CFIndex count = CFArrayGetCount(children_ref);
@@ -361,8 +355,9 @@ static void show_usage(const char* program_name) {
   printf("Usage: %s [-l | -s id/alias ]\n", program_name);
   printf("  -l: Lista le opzioni di menu nell'app in primo piano\n");
   printf("  -s id: Seleziona l'opzione di menu con ID specificato\n");
-  printf("  -s alias: Seleziona l'opzione di menu extra con alias specificato (formato: "
-         "'app,nome')\n");
+  printf(
+      "  -s alias: Seleziona l'opzione di menu extra con alias specificato (formato: "
+      "'app,nome')\n");
 }
 
 int main(int argc, char** argv) {
