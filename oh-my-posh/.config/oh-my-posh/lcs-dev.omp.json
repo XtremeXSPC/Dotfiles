@@ -145,7 +145,7 @@
   "secondary_prompt": {
     "background": "transparent",
     "foreground": "p:terminal-blue",
-    "template": "\u279c "
+    "template": "\uf061 "
   },
   "transient_prompt": {
     "background": "transparent",
