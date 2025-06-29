@@ -3,282 +3,180 @@
 #include <limits.h>
 #include <signal.h>
 #include <stdarg.h>
-#include <sys/time.h>
+#include <time.h>
 
+// --- Constants ---
 static const int DEFAULT_UPDATE_INTERVAL = 900;
 static const int DEFAULT_CHECK_INTERVAL  = 60;
 static const int MAX_EVENT_NAME_LENGTH   = 64;
-static const int MAX_MESSAGE_LENGTH      = 1024;
+static const int MAX_MESSAGE_LENGTH      = 2048;
 
-// Variabili globali
-static volatile sig_atomic_t terminate = 0;
-static brew_t                brew_state;
-static char                  event_name[MAX_EVENT_NAME_LENGTH] = {0};
-static float                 check_frequency                   = DEFAULT_CHECK_INTERVAL;
-static int                   update_interval                   = DEFAULT_UPDATE_INTERVAL;
-static bool                  verbose_mode                      = false;
+// --- Global State ---
+/** @brief Flag to gracefully terminate the daemon, set by a signal handler. Must be volatile sig_atomic_t. */
+static volatile sig_atomic_t g_terminate_flag = 0;
+/** @brief Flag to force an immediate check, set by a signal handler. Must be volatile sig_atomic_t. */
+static volatile sig_atomic_t g_force_check_flag = 0;
 
-// Prototipo per funzioni di aiuto
-static void log_message(const char* format, ...);
-static void cleanup_and_exit(int exit_code);
+// --- Forward Declarations ---
 static void handle_signal(int sig);
+static void check_and_notify(brew_t* brew, const char* event_name, bool force_update, bool verbose);
+static void show_usage(const char* program_name);
+static void log_message(bool verbose, const char* format, ...);
 
 /**
- * Gestisce i segnali
- */
-static void handle_signal(int sig) {
-  // Imposta il flag di terminazione e gestisci in base al segnale
-  switch (sig) {
-  case SIGINT:
-  case SIGTERM:
-    log_message("Ricevuto segnale %d, terminazione in corso...", sig);
-    terminate = 1;
-    break;
-  case SIGHUP:
-    log_message("Ricevuto SIGHUP, ricaricamento della configurazione...");
-    // Qui si potrebbe ricaricare la configurazione se necessario
-    break;
-  default:
-    log_message("Ricevuto segnale non gestito: %d", sig);
-    break;
-  }
-}
-
-/**
- * Funzione di aiuto per la registrazione di messaggi
- */
-static void log_message(const char* format, ...) {
-  if (!verbose_mode || !format)
-    return;
-
-  va_list args;
-  va_start(args, format);
-
-  time_t now = time(NULL);
-  if (now == (time_t)-1) {
-    fprintf(stderr, "Errore nell'ottenere l'ora corrente\n");
-    va_end(args);
-    return;
-  }
-
-  struct tm* time_info = localtime(&now);
-  if (!time_info) {
-    fprintf(stderr, "Errore nella conversione dell'ora\n");
-    va_end(args);
-    return;
-  }
-
-  char timestamp[20];
-  if (strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", time_info) == 0) {
-    fprintf(stderr, "Errore nella formattazione dell'ora\n");
-    va_end(args);
-    return;
-  }
-
-  fprintf(stderr, "[%s] brew_check: ", timestamp);
-  vfprintf(stderr, format, args);
-  fprintf(stderr, "\n");
-
-  va_end(args);
-}
-
-/**
- * Funzione ausiliaria per verificare se l'aggiornamento è necessario
- * considerando anche la responsività del sistema
- */
-[[nodiscard]] static bool should_update_now(brew_t* brew) {
-  if (!brew)
-    return false;
-
-  // Check basato sul tempo trascorso
-  if (brew_needs_update(brew, update_interval)) {
-    // Controlliamo il carico di sistema
-    double load[1];
-    if (getloadavg(load, 1) == 1) {
-      static const double HIGH_LOAD_THRESHOLD = 2.0;
-      if (load[0] > HIGH_LOAD_THRESHOLD) {
-        log_message("Sistema sotto carico (%.2f), rinvio aggiornamento", load[0]);
-        return false;
-      }
-    } else {
-      log_message("Impossibile ottenere il carico di sistema, procedo comunque");
-    }
-    return true;
-  }
-  return false;
-}
-
-/**
- * Esegue il controllo e notifica sketchybar
- */
-static void check_and_notify(void) {
-  // Verifica se è necessario aggiornare
-  if (should_update_now(&brew_state)) {
-    log_message("Aggiornamento database brew in corso...");
-    brew_error_t result = brew_update(&brew_state);
-
-    if (result != BREW_SUCCESS) {
-      log_message("Errore durante l'aggiornamento: %s", brew_error_string(result));
-    } else {
-      log_message("Trovati %d pacchetti obsoleti", brew_state.outdated_count);
-    }
-  }
-
-  // Prepara e invia la notifica a sketchybar
-  char trigger_message[MAX_MESSAGE_LENGTH];
-  int  message_len = snprintf(
-      trigger_message, sizeof(trigger_message), "--trigger '%s' outdated_count='%d' pending_updates='%s' last_check='%ld' error='%s'",
-      event_name, brew_state.outdated_count, brew_state.package_list ? brew_state.package_list : "", (long)brew_state.last_check,
-      brew_error_string(brew_state.last_error));
-
-  // Verifica overflow o errori del buffer
-  if (message_len < 0) {
-    log_message("Errore durante la formattazione del messaggio");
-    return;
-  } else if (message_len >= (int)sizeof(trigger_message)) {
-    log_message("Avviso: messaggio di trigger troncato");
-  }
-
-  // Invia il comando a sketchybar
-  sketchybar(trigger_message);
-}
-
-/**
- * Pulisce le risorse e termina il programma
- */
-[[noreturn]] static void cleanup_and_exit(int exit_code) {
-  log_message("Pulizia risorse in corso...");
-  brew_cleanup(&brew_state);
-  exit(exit_code);
-}
-
-/**
- * Mostra l'uso del programma
- */
-static void show_usage(const char* program_name) {
-  if (!program_name)
-    program_name = "brew_check";
-
-  printf("Uso: %s \"<event-name>\" \"<event_freq>\" [update_interval] [--verbose]\n", program_name);
-  printf("  event-name: Nome dell'evento sketchybar da attivare\n");
-  printf("  event_freq: Frequenza di controllo aggiornamenti (in secondi)\n");
-  printf(
-      "  update_interval: Opzionale - Frequenza di esecuzione brew update (in secondi, default: "
-      "%d)\n",
-      DEFAULT_UPDATE_INTERVAL);
-  printf("  --verbose: Opzionale - Abilita messaggi dettagliati\n");
-}
-
-/**
- * Funzione principale
+ * @brief Main entry point for the brew_check daemon.
  */
 int main(int argc, char** argv) {
-  // Controlla argomenti minimi
+  // --- Argument Parsing ---
   if (argc < 3) {
     show_usage(argv[0]);
     return 1;
   }
 
-  // Analizza argomenti aggiuntivi e opzioni
-  if (strlen(argv[1]) >= MAX_EVENT_NAME_LENGTH) {
-    fprintf(stderr, "Errore: nome evento troppo lungo (max %d caratteri)\n", MAX_EVENT_NAME_LENGTH - 1);
-    return 1;
-  }
+  char event_name[MAX_EVENT_NAME_LENGTH] = {0};
+  strncpy(event_name, argv[1], sizeof(event_name) - 1);
 
-  strncpy(event_name, argv[1], MAX_EVENT_NAME_LENGTH - 1);
-  event_name[MAX_EVENT_NAME_LENGTH - 1] = '\0';
+  long check_interval_secs = strtol(argv[2], NULL, 10);
+  if (check_interval_secs <= 0)
+    check_interval_secs = DEFAULT_CHECK_INTERVAL;
 
-  // Conversione frequenza controllo
-  if (sscanf(argv[2], "%f", &check_frequency) != 1 || check_frequency <= 0) {
-    fprintf(stderr, "Errore: frequenza di controllo non valida\n");
-    show_usage(argv[0]);
-    return 1;
-  }
+  long update_interval_secs = (argc > 3) ? strtol(argv[3], NULL, 10) : DEFAULT_UPDATE_INTERVAL;
+  if (update_interval_secs <= 0)
+    update_interval_secs = DEFAULT_UPDATE_INTERVAL;
 
-  // Leggi argomenti opzionali
-  for (int i = 3; i < argc; i++) {
-    if (strcmp(argv[i], "--verbose") == 0) {
-      verbose_mode = true;
-    } else if (i == 3 && argv[i][0] != '-') {
-      // Assume che il terzo argomento sia l'intervallo di aggiornamento se non è un'opzione
-      if (sscanf(argv[i], "%d", &update_interval) != 1 || update_interval <= 0) {
-        fprintf(stderr, "Avviso: intervallo di aggiornamento non valido, uso valore predefinito %d\n", DEFAULT_UPDATE_INTERVAL);
-        update_interval = DEFAULT_UPDATE_INTERVAL;
-      }
-    }
-  }
+  // This variable is now used by the log_message function.
+  bool verbose_mode = (argc > 4 && strcmp(argv[4], "--verbose") == 0);
 
-  log_message("Avvio con evento '%s', frequenza %.2fs, intervallo di aggiornamento %ds", event_name, check_frequency, update_interval);
-
-  // Configura gestori di segnali
-  struct sigaction sa = {0}; // Zero-inizializzazione usando C23
+  // --- Signal Handling Setup ---
+  struct sigaction sa = {0};
   sa.sa_handler       = handle_signal;
   sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_RESTART; // Restart syscalls if possible
+  sigaction(SIGINT, &sa, NULL);
+  sigaction(SIGTERM, &sa, NULL);
+  sigaction(SIGUSR1, &sa, NULL);
 
-  if (sigaction(SIGINT, &sa, NULL) == -1 || sigaction(SIGTERM, &sa, NULL) == -1 || sigaction(SIGHUP, &sa, NULL) == -1) {
-    fprintf(stderr, "Errore nella configurazione dei gestori di segnali: %s\n", strerror(errno));
+  // --- Initialization ---
+  brew_t       brew_state;
+  brew_error_t err = brew_init(&brew_state);
+  if (err != BREW_SUCCESS) {
+    // Fatal errors are always logged.
+    log_message(true, "Initialization failed: %s", brew_error_string(err));
     return 1;
   }
 
-  // Verifica se brew è installato
-  if (!brew_is_installed()) {
-    fprintf(stderr, "Errore: Homebrew non è installato\n");
-    return 1;
-  }
+  // Register the custom event with Sketchybar
+  char sketchybar_cmd[256];
+  snprintf(sketchybar_cmd, sizeof(sketchybar_cmd), "--add event %s", event_name);
+  sketchybar(sketchybar_cmd);
+  log_message(verbose_mode, "Daemon started. Event '%s' registered.", event_name);
 
-  // Inizializza lo stato brew
-  if (brew_init(&brew_state) != BREW_SUCCESS) {
-    fprintf(stderr, "Errore: Impossibile inizializzare lo stato brew\n");
-    return 1;
-  }
+  // --- Main Loop ---
+  // The first check is triggered immediately to populate the bar on startup.
+  g_force_check_flag = 1;
 
-  // Eseguiamo un aggiornamento iniziale
-  log_message("Esecuzione aggiornamento iniziale...");
-  brew_error_t update_result = brew_update(&brew_state);
-  if (update_result != BREW_SUCCESS) {
-    log_message("Errore durante l'aggiornamento iniziale: %s", brew_error_string(update_result));
-  }
+  while (!g_terminate_flag) {
+    if (g_force_check_flag) {
+      g_force_check_flag = 0;
+      check_and_notify(&brew_state, event_name, true, verbose_mode);
+    } else {
+      check_and_notify(&brew_state, event_name, false, verbose_mode);
+    }
 
-  // Configuriamo l'evento in sketchybar
-  char event_message[MAX_MESSAGE_LENGTH];
-  int  event_msg_len = snprintf(event_message, sizeof(event_message), "--add event '%s'", event_name);
-  if (event_msg_len < 0 || event_msg_len >= (int)sizeof(event_message)) {
-    log_message("Errore nella formattazione del messaggio evento");
-    cleanup_and_exit(1);
-  }
-
-  // Configurazione dell'evento in sketchybar
-  sketchybar(event_message);
-
-  // Notifichiamo subito lo stato iniziale
-  check_and_notify();
-
-  // Calcolo del numero di microsecondi per il sonno
-  unsigned long              sleep_microseconds    = (unsigned long)(check_frequency * 1000000);
-  static const unsigned long MAX_SAFE_MICROSECONDS = ULONG_MAX / 2;
-  if (sleep_microseconds > MAX_SAFE_MICROSECONDS || sleep_microseconds == 0) {
-    log_message("Avviso: intervallo di %f s non valido, limitato a %lu s", check_frequency, MAX_SAFE_MICROSECONDS / 1000000);
-    sleep_microseconds = MAX_SAFE_MICROSECONDS;
-  }
-
-  // Loop principale
-  log_message("Entro nel loop principale");
-  while (!terminate) {
-    // Esegui controllo e notifica
-    check_and_notify();
-
-    // Attesa con gestione dei segnali
-    unsigned int              remaining        = sleep_microseconds;
-    static const unsigned int SLEEP_CHUNK_SIZE = 500000; // 0.5 secondi
-    while (remaining > 0 && !terminate) {
-      // Attesa a blocchi più piccoli per reattività ai segnali
-      unsigned int sleep_chunk = (remaining > SLEEP_CHUNK_SIZE) ? SLEEP_CHUNK_SIZE : remaining;
-      usleep(sleep_chunk);
-      remaining -= sleep_chunk;
+    // Sleep in chunks to remain responsive to signals
+    for (int i = 0; i < check_interval_secs * 2; ++i) {
+      if (g_terminate_flag || g_force_check_flag)
+        break;
+      usleep(500000); // Sleep for 0.5 seconds
     }
   }
 
-  // Pulizia e uscita
-  log_message("Terminazione regolare");
-  cleanup_and_exit(0);
+  // --- Cleanup ---
+  brew_cleanup(&brew_state);
+  log_message(verbose_mode, "Terminating gracefully.");
+  return 0;
+}
+
+/**
+ * @brief Performs the brew check and sends a trigger to Sketchybar.
+ *
+ * @param brew The brew state structure.
+ * @param event_name The name of the custom event to trigger.
+ * @param force_update If true, ignores the time interval and system load checks.
+ * @param verbose If true, enables detailed logging for this operation.
+ */
+static void check_and_notify(brew_t* brew, const char* event_name, bool force_update, bool verbose) {
+  if (force_update || brew_needs_update(brew, DEFAULT_UPDATE_INTERVAL)) {
+    log_message(verbose, "Fetching outdated packages (forced: %s)...", force_update ? "yes" : "no");
+
+    // Capture the return value to satisfy the [[nodiscard]] attribute.
+    brew_error_t fetch_err = brew_fetch_outdated(brew);
+    if (fetch_err != BREW_SUCCESS) {
+      log_message(verbose, "Fetch failed with error: %s", brew_error_string(fetch_err));
+    } else {
+      log_message(verbose, "Fetch successful. Found %d outdated packages.", brew->outdated_count);
+    }
+  }
+
+  // Prepare the message for Sketchybar
+  char trigger_message[MAX_MESSAGE_LENGTH];
+  snprintf(
+      trigger_message, sizeof(trigger_message), "--trigger %s outdated_count='%d' pending_updates='%s' last_check='%ld' error='%s'",
+      event_name, brew->outdated_count, brew->package_list ? brew->package_list : "", (long)brew->last_check,
+      brew_error_string(brew->last_error));
+
+  // Send the command to Sketchybar
+  sketchybar(trigger_message);
+}
+
+/**
+ * @brief Signal handler for graceful shutdown and forced refresh.
+ *
+ * This function is async-signal-safe. It only sets atomic flags.
+ * @param sig The signal number received.
+ */
+static void handle_signal(int sig) {
+  switch (sig) {
+  case SIGINT:
+  case SIGTERM:
+    g_terminate_flag = 1;
+    break;
+  case SIGUSR1:
+    g_force_check_flag = 1;
+    break;
+  }
+}
+
+/**
+ * @brief Prints usage information to stderr.
+ * @param program_name The name of the executable (argv[0]).
+ */
+static void show_usage(const char* program_name) {
+  fprintf(stderr, "Usage: %s <event_name> [check_interval_s] [update_interval_s] [--verbose]\n", program_name);
+}
+
+/**
+ * @brief Logs a message to stderr if verbose mode is enabled.
+ *
+ * @param verbose The flag indicating if logging is active.
+ * @param format The format string for the message.
+ * @param ... Variable arguments for the format string.
+ */
+static void log_message(bool verbose, const char* format, ...) {
+  if (!verbose)
+    return;
+
+  // Add timestamp for better logging
+  char       time_buf[26];
+  time_t     now    = time(NULL);
+  struct tm* tminfo = localtime(&now);
+  strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", tminfo);
+
+  fprintf(stderr, "[%s] brew_check: ", time_buf);
+
+  va_list args;
+  va_start(args, format);
+  vfprintf(stderr, format, args);
+  va_end(args);
+  fprintf(stderr, "\n");
 }
