@@ -1,9 +1,26 @@
 # =========================================================================== #
+# +++++++++++++++++++++++++++ DETECT OPERATING SYSTEM +++++++++++++++++++++++ #
+# =========================================================================== #
+
+# Rileva il sistema operativo per caricare configurazioni specifiche
+case "$(uname -s)" in
+    Darwin)
+        export OS_TYPE='macOS'
+        ;;
+    Linux)
+        export OS_TYPE='Linux'
+        ;;
+    *)
+        export OS_TYPE='Other'
+        ;;
+esac
+
+# =========================================================================== #
 # +++++++++++++++++++++++++++ BASE CONFIGURATION ++++++++++++++++++++++++++++ #
 # =========================================================================== #
 
 # =============== Startup Commands =============== #
-# fastfetch
+# fastfetch # Assicurati che sia installato su entrambi i sistemi
 
 # =============== Helper Functions ============== #
 # Function to check for duplicates in the PATH
@@ -13,70 +30,91 @@ check_path_dupes() {
 
 # Optimized function to configure the PATH in batch mode
 setup_path() {
-  # Initial base path
-  local base_path="/usr/bin:/bin:/usr/sbin:/sbin"
+  # Initial base path (standard per sistemi UNIX-like)
+  local base_path="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
   
-  # Array for directories to prepend (high priority)
-  local prepend_dirs=(
-    "/opt/homebrew/bin"
-    "$HOME/.local/bin"
-    "/usr/local/bin"
-    "$HOME/usr/local/bin"
-    "/opt/homebrew/opt/llvm/bin"
-  )
-  
-  # Array for directories to append
-  local append_dirs=(
-    "$HOME/.nix-profile/bin"
-    "/nix/var/nix/profiles/default/bin"
-    "/run/current-system/sw/bin"
-    "$HOME/.cabal/bin"
-    "$HOME/.ghcup/bin"
-    "$HOME/.ada/bin"
-    "$HOME/.cargo/bin"
-    "$GOPATH/bin"
-    "$GOROOT/bin"
-    "$HOME/.config/emacs/bin"
-    "/opt/homebrew/opt/openjdk/bin" 
-    "/usr/local/texlive/2025/bin/universal-darwin"
-    "/Library/TeX/texbin"
-    "$ANDROID_HOME/tools"
-    "$ANDROID_HOME/tools/bin"
-    "$ANDROID_HOME/platform-tools"
-    "/usr/local/git/bin"
-    "/usr/local/mysql/bin"
-    "/opt/homebrew/opt/ncurses/bin"
-    "$HOME/00_ENV/miniforge3/bin"
-    "$HOME/00_ENV/miniforge3/condabin"
-    "$HOME/.lcs-bin"
-    "$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
-  )
-  
-  # Build the prepend paths
-  local new_prepend=""
-  for dir in "${prepend_dirs[@]}"; do
-    if [[ -d "$dir" && ":$base_path:" != *":$dir:"* ]]; then
-      new_prepend="$dir:$new_prepend"
-    fi
-  done
+  # Array per percorsi (dipendenti dall'OS)
+  local prepend_dirs=()
+  local append_dirs=()
 
-  # Modify the function to skip existence checks for some critical paths
-  for dir in "${append_dirs[@]}"; do
-    # Check if the path is critical (add paths here that MUST be included)
-    if [[ "$dir" == "$HOME/.nix-profile/bin"  ||
-          "$dir" == "$ANDROID_HOME/tools"     ||
-          "$dir" == "$ANDROID_HOME/tools/bin" ||
-          "$dir" == "/usr/local/git/bin" ]]; then
-      # Add without existence check
-      new_append="$new_append:$dir"
-    elif [[ -d "$dir" && ":$base_path:" != *":$dir:"* && ":$new_prepend:" != *":$dir:"* ]]; then
-      # Normal check for other paths
-      new_append="$new_append:$dir"
+  if [[ "$OS_TYPE" == 'macOS' ]]; then
+    # --- Percorsi per macOS ---
+    prepend_dirs=(
+      "/opt/homebrew/bin"
+      "$HOME/.local/bin"
+      "/usr/local/bin"
+      "/opt/homebrew/opt/llvm/bin"
+    )
+    append_dirs=(
+      "$HOME/.nix-profile/bin"
+      "/nix/var/nix/profiles/default/bin"
+      "/run/current-system/sw/bin"
+      "$HOME/.cabal/bin"
+      "$HOME/.ghcup/bin"
+      "$HOME/.ada/bin"
+      "$HOME/.cargo/bin"
+      "$GOPATH/bin"
+      "$GOROOT/bin"
+      "$HOME/.config/emacs/bin"
+      "/opt/homebrew/opt/openjdk/bin" 
+      "/usr/local/texlive/2025/bin/universal-darwin"
+      "/Library/TeX/texbin"
+      "$ANDROID_HOME/tools"
+      "$ANDROID_HOME/tools/bin"
+      "$ANDROID_HOME/platform-tools"
+      "/usr/local/git/bin"
+      "/usr/local/mysql/bin"
+      "/opt/homebrew/opt/ncurses/bin"
+      "$HOME/00_ENV/miniforge3/bin"
+      "$HOME/00_ENV/miniforge3/condabin"
+      "$HOME/.lcs-bin"
+      "$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
+    )
+  elif [[ "$OS_TYPE" == 'Linux' ]]; then
+    # --- Percorsi per Linux ---
+    prepend_dirs=(
+      "/usr/local/bin"
+      "$HOME/.local/bin"
+      "/home/linuxbrew/.linuxbrew/bin"
+    )
+    append_dirs=(
+      "$HOME/.nix-profile/bin"
+      "/nix/var/nix/profiles/default/bin"
+      "/run/current-system/sw/bin"
+      "$HOME/.cabal/bin"
+      "$HOME/.ghcup/bin"
+      "$HOME/.ada/bin"
+      "$HOME/.cargo/bin"
+      "$GOPATH/bin"
+      "$GOROOT/bin"
+      "$HOME/.config/emacs/bin"
+      "$HOME/.local/share/fnm"
+      "$ANDROID_HOME/tools"
+      "$ANDROID_HOME/tools/bin"
+      "$ANDROID_HOME/platform-tools"
+      "$HOME/00_ENV/miniforge3/bin"
+      "$HOME/00_ENV/miniforge3/condabin"
+      "$HOME/.lcs-bin"
+    )
+  fi
+
+  local final_path="$base_path"
+  
+  # Aggiunge percorsi da anteporre (prepend)
+  for dir in "${prepend_dirs[@]}"; do
+    if [[ -d "$dir" && ":$final_path:" != *":$dir:"* ]]; then
+      final_path="$dir:$final_path"
     fi
   done
   
-  # Assemble the complete path
-  export PATH="${new_prepend}${base_path}${new_append}"
+  # Aggiunge percorsi da accodare (append)
+  for dir in "${append_dirs[@]}"; do
+    if [[ -d "$dir" && ":$final_path:" != *":$dir:"* ]]; then
+      final_path="$final_path:$dir"
+    fi
+  done
+  
+  export PATH="$final_path"
 }
 
 # =========================================================================== #
@@ -93,9 +131,16 @@ else
     export TERM=xterm-256color
 fi
 
-# LLVM Flags
-export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
-export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
+# Variabili d'ambiente specifiche per OS
+if [[ "$OS_TYPE" == 'macOS' ]]; then
+  # LLVM Flags (tipico per Homebrew su macOS)
+  export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
+  export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
+  # C/C++ Libraries
+  export CPATH=/opt/homebrew/include
+  # OpenJDK
+  export CPPFLAGS="-I/opt/homebrew/opt/openjdk/include"
+fi
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -136,18 +181,15 @@ export ZSH_COMPDUMP="$ZSH/cache/.zcompdump-$HOST"
 # +++++++++++++++++++++++++++ ENVIRONMENT VARIABLES +++++++++++++++++++++++++ #
 # =========================================================================== #
 
-# ------------ Homebrew ------------- #
-# Set PATH, MANPATH, etc., for Homebrew.
-eval "$(/opt/homebrew/bin/brew shellenv)"
-
-# Update Homebrew packages
-function brew() {
-  command brew "$@" 
-
-  if [[ $* =~ "upgrade" ]] || [[ $* =~ "update" ]] || [[ $* =~ "outdated" ]]; then
-    sketchybar --trigger brew_update
-  fi
-}
+# ------------ Homebrew / Linuxbrew ------------- #
+# Cerca Homebrew nei percorsi standard di macOS e Linux
+if [ -x "/opt/homebrew/bin/brew" ]; then # macOS Apple Silicon
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [ -x "/usr/local/bin/brew" ]; then # macOS Intel
+  eval "$(/usr/local/bin/brew shellenv)"
+elif [ -f "/home/linuxbrew/.linuxbrew/bin/brew" ]; then # Linux
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
 
 # ------------ Nix ------------------ #
 if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
@@ -156,58 +198,92 @@ elif [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
   . "$HOME/.nix-profile/etc/profile.d/nix.sh"
 fi
 
-# Note: Nix paths are already configured in the setup_path function
-
 # =========================================================================== #
-# +++++++++++++++++++++ LINGUAGGI E STRUMENTI DI SVILUPPO ++++++++++++++++++ #
+# +++++++++++++++++++++ LINGUAGGI E STRUMENTI DI SVILUPPO +++++++++++++++++++ #
 # =========================================================================== #
 
-# Nota: tutti i percorsi sono già configurati nella funzione setup_path 
-# all'inizio del file
-
-# Haskell (ghcup-env)
-[ -f "/Users/lcs-dev/.ghcup/env" ] && . "/Users/lcs-dev/.ghcup/env"
-
-# C/C++ Libraries
-export CPATH=/opt/homebrew/include
+# Haskell (ghcup-env) - Generalizzato con $HOME
+[ -f "$HOME/.ghcup/env" ] && . "$HOME/.ghcup/env"
 
 # GO Language 
 export GOROOT=/usr/local/go
 export GOPATH=$HOME/00_ENV/go
 
-# Java
-#export JAVA_HOME=$(/usr/libexec/java_home)
+# ------------ Java - Impostazione Dinamica di JAVA_HOME ------------ #
+setup_java_home() {
+  if [[ "$OS_TYPE" == 'macOS' ]]; then
+    # Su macOS, usiamo l'utility fornita dal sistema
+    if [ -x "/usr/libexec/java_home" ]; then
+      export JAVA_HOME=$(/usr/libexec/java_home)
+      # Aggiungiamo anche il bin di JAVA_HOME al PATH per coerenza
+      export PATH="$JAVA_HOME/bin:$PATH"
+    fi
+  elif [[ "$OS_TYPE" == 'Linux' ]]; then
+    # Metodo 1: Per sistemi basati su Debian/Ubuntu (usa update-alternatives)
+    if command -v update-alternatives &>/dev/null; then
+      # Troviamo il percorso reale dell'eseguibile java, seguendo i link simbolici
+      local java_path=$(readlink -f $(which java))
+      if [[ -n "$java_path" ]]; then
+        # Il JAVA_HOME è la directory genitore della directory 'bin'
+        export JAVA_HOME="${java_path%/bin/java}"
+      fi
+    fi
 
-# OpenJDK
-export CPPFLAGS="-I/opt/homebrew/opt/openjdk/include"
+    # Metodo 2: Per sistemi Arch Linux (usa archlinux-java)
+    if [[ -z "$JAVA_HOME" ]] && command -v archlinux-java &>/dev/null; then
+        local java_env=$(archlinux-java get)
+        if [[ -n "$java_env" ]]; then
+            export JAVA_HOME="/usr/lib/jvm/$java_env"
+        fi
+    fi
 
-# Android ADB
-export ANDROID_HOME="$HOME/Library/Android/Sdk"
+    # Metodo 3: Fallback generico cercando in /usr/lib/jvm
+    if [[ -z "$JAVA_HOME" ]] && [[ -d "/usr/lib/jvm" ]]; then
+        # Cerca la versione più recente di openjdk come fallback
+        export JAVA_HOME=$(find /usr/lib/jvm -maxdepth 1 -type d -name "java-*-openjdk*" | sort -V | tail -n 1)
+    fi
+    
+    # Se dopo tutti i tentativi JAVA_HOME è ancora vuoto, avvisiamo l'utente.
+    if [[ -z "$JAVA_HOME" || ! -d "$JAVA_HOME" ]]; then
+      echo "⚠️  Attenzione: Impossibile determinare JAVA_HOME automaticamente."
+      echo "    Per favore, impostalo manualmente nel tuo zshrc."
+      # Esempio: export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    else
+        export PATH="$JAVA_HOME/bin:$PATH"
+    fi
+  fi
+}
 
-# NVM - It's necessary to load nvm path here before call to setup_path
-# export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-# This loads nvm
-# [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh" 
-# This loads nvm bash_completion
-# [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+# Esegui la funzione per configurare l'ambiente Java
+setup_java_home
+
+# Android ADB (il percorso potrebbe variare su Linux)
+export ANDROID_HOME="$HOME/Library/Android/Sdk" # macOS
+if [[ "$OS_TYPE" == 'Linux' ]]; then
+    # Linux
+   export ANDROID_HOME="$HOME/Android/Sdk" 
+fi
 
 # FNM (Fast Node Manager)
-FNM_PATH="/opt/homebrew/bin/fnm"
-if [ -d "$FNM_PATH" ]; then
-  export PATH="/opt/homebrew/bin/fnm:$PATH"
+if command -v fnm &>/dev/null; then
+    eval "$(fnm env --use-on-cd --shell zsh)"
 fi
-eval "$(fnm env --use-on-cd --shell zsh)"
 
 # =========================================================================== #
 # +++++++++++++++++++++++++++ GLOBAL VARIABLES ++++++++++++++++++++++++++++++ #
 # =========================================================================== #
+# Questi sono percorsi personali e dovrebbero funzionare se il volume è montato
 
-# -------------------------------- Directories ------------------------------ #
 # LCS.Data Volume
 export LCS_Data="/Volumes/LCS.Data"
-# Check if the volume is already mounted
-if [ ! -d "$LCS_Data" ]; then
+if [[ ! -d "$LCS_Data" && "$OS_TYPE" == 'macOS' ]]; then
   echo "⚠️  Attenzione: Il volume LCS.Data non è montato"
+elif [[ "$OS_TYPE" == 'Linux' ]]; then
+    # Su Linux i volumi esterni vengono montati altrove, es. /media/utente/LCS.Data
+    export LCS_Data="/media/$USER/LCS.Data"
+    if [ ! -d "$LCS_Data" ]; then
+        echo "⚠️  Attenzione: Il volume LCS.Data non sembra montato in $LCS_Data"
+    fi
 fi
 
 # Configuration System Directory
@@ -216,8 +292,7 @@ export CONFIG_DIR="$HOME/.config"
 # Clang-Format Configuration
 export CLANG_FORMAT_CONFIG="$HOME/.config/clang-format/.clang-format"
 
-# -------------------------------- BLOG ------------------------------------- #
-# Variables for Blog Automation
+# BLOG Variables (dipendono da LCS_Data)
 export BLOG_POSTS_DIR="$LCS_Data/Blog/CS-Topics/content/posts/"
 export BLOG_STATIC_IMAGES_DIR="$LCS_Data/Blog/CS-Topics/static/images"
 export IMAGES_SCRIPT_PATH="$LCS_Data/Blog/Automatic-Updates/images.py"
@@ -226,61 +301,20 @@ export OBSIDIAN_ATTACHMENTS_DIR="$HOME/Documents/Obsidian-Vault/XSPC-Vault/Blog/
 # =========================================================================== #
 # ++++++++++++++++++++++ PERSONAL CONFIGURATION - THEMES ++++++++++++++++++++ #
 # =========================================================================== #
+# Questa sezione è quasi interamente cross-platform
 
 # -------------------------------- VI-MODE ---------------------------------- #
-# Abilita modalità vi
 bindkey -v
-
-# Riduce il ritardo per il cambio modalità (0.1 secondi)
 export KEYTIMEOUT=10
-
-# Imposta la variabile per Oh-My-Posh
-export ZSH_VI_MODE="viins"
-
-# Funzione principale per aggiornare la modalità
-function update_vim_mode() {
-  export ZSH_VI_MODE="${KEYMAP}"
-  zle reset-prompt
-}
-
-# Collega agli eventi zle
-function zle-keymap-select() {
-  update_vim_mode
-}
-
-function zle-line-init() {
-  zle -K viins
-  update_vim_mode
-}
-
 zle -N zle-keymap-select
 zle -N zle-line-init
-
-# Funzioni esplicite per cambio modalità
-function vim_insert_mode() {
-  zle -K viins
-  update_vim_mode
+function zle-line-init() { zle -K viins }
+function zle-keymap-select() {
+  case $KEYMAP in
+    viins) zle-line-init ;;
+    vicmd) zle reset-prompt ;;
+  esac
 }
-
-function vim_normal_mode() {
-  zle -K vicmd
-  update_vim_mode
-}
-
-# Crea widget zle
-zle -N vim_insert_mode
-zle -N vim_normal_mode
-
-# Associa i tasti per il passaggio alla modalità inserimento
-bindkey -M vicmd 'i' vim_insert_mode
-bindkey -M vicmd 'I' vim_insert_mode
-bindkey -M vicmd 'a' vim_insert_mode
-bindkey -M vicmd 'A' vim_insert_mode
-bindkey -M vicmd 'o' vim_insert_mode
-bindkey -M vicmd 'O' vim_insert_mode
-
-# Associa ESC per il passaggio alla modalità normale
-bindkey -M viins '^[' vim_normal_mode
 
 # -------------------------------- PROMPT ----------------------------------- #
 # Oh My Posh - Prompt personalizzato
@@ -335,7 +369,8 @@ _fzf_compgen_dir() {
   fd --type=d --hidden --exclude .git . "$1"
 }
 
-source ~/.config/fzf-git.sh/fzf-git.sh
+source ~/.config/fzf-git/fzf-git.sh
+
 
 export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always --line-range :500 {}'"
 export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always {} | head -200'"
@@ -363,15 +398,9 @@ export BAT_THEME=tokyonight_night
 # ------- Zoxide (better cd) -------- #
 eval "$(zoxide init zsh)"
 
-# ------------ ngrok ---------------- #
-if command -v ngrok &>/dev/null; then
-    eval "$(ngrok completion)"
-fi
-
-# ----------- Angular CLI ----------- #
-if command -v ng &>/dev/null; then
-    source <(ng completion script)
-fi
+# ------------ ngrok & Angular (cross-platform) ---------------- #
+if command -v ngrok &>/dev/null; then eval "$(ngrok completion)"; fi
+if command -v ng &>/dev/null; then source <(ng completion script); fi
 
 # -------------- PyENV -------------- #
 export PYENV_ROOT="$HOME/.pyenv"
@@ -379,80 +408,50 @@ export PYENV_ROOT="$HOME/.pyenv"
 eval "$(pyenv init -)"
 
 # >>> Conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/Users/lcs-dev/00_ENV/miniforge3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+# !! Generalizzato con $HOME !!
+__conda_setup="$('$HOME/00_ENV/miniforge3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
 if [ $? -eq 0 ]; then
     eval "$__conda_setup"
 else
-    if [ -f "/Users/lcs-dev/00_ENV/miniforge3/etc/profile.d/conda.sh" ]; then
-        . "/Users/lcs-dev/00_ENV/miniforge3/etc/profile.d/conda.sh"
+    if [ -f "$HOME/00_ENV/miniforge3/etc/profile.d/conda.sh" ]; then
+        . "$HOME/00_ENV/miniforge3/etc/profile.d/conda.sh"
     else
-        export PATH="/Users/lcs-dev/00_ENV/miniforge3/bin:$PATH"
+        export PATH="$HOME/00_ENV/miniforge3/bin:$PATH"
     fi
 fi
 unset __conda_setup
 # <<< Conda initialize <<<
 
-# vTerm - Emacs Settings
-vterm_printf() {
-    if [ -n "$TMUX" ] && ([ "${TERM%%-*}" = "tmux" ] || [ "${TERM%%-*}" = "screen" ]); then
-        # Tell tmux to pass the escape sequences through
-        printf "\ePtmux;\e\e]%s\007\e\\" "$1"
-    elif [ "${TERM%%-*}" = "screen" ]; then
-        # GNU screen (screen, screen-256color, screen-256color-bce)
-        printf "\eP\e]%s\007\e\\" "$1"
-    else
-        printf "\e]%s\e\\" "$1"
-    fi
-}
-
 # =========================================================================== #
 # ++++++++++++++++++++++++++++++++ ALIASES +++++++++++++++++++++++++++++++++++ #
 # =========================================================================== #
 
-# Dirs
+# --- Alias Comuni (Cross-Platform) ---
 alias ..="cd .."
 alias ...="cd ../.."
 alias ....="cd ../../.."
 alias .....="cd ../../../.."
 alias ......="cd ../../../../.."
-
-# Compile C++ programs
-alias compile="clang++ -std=c++20 -O3 -march=native -flto=thin -ffast-math -I/usr/local/include"
-
-# Eza (sostituto moderno di ls)
 alias ls="eza --color=always --long --git --icons=always"
-
-# thefuck alias (corregge i comandi digitati male)
-eval $(thefuck --alias)       # Crea l'alias "fuck"
-eval $(thefuck --alias fk)    # Crea l'alias più breve "fk"
-
-# Zoxide (sostituto intelligente di cd)
-# Nota: questo alias sovrascrive completamente il comando cd nativo
-# Se hai problemi con script che si aspettano il comportamento standard di cd, rimuovi questa riga
+eval $(thefuck --alias)
+eval $(thefuck --alias fk)
 alias cd="z"
-
-# Clear terminal
 alias c="clear"
-
-# Tailscale
-alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
-
-# Ranger (file manager da terminale)
 alias ranger='TERM=screen-256color ranger'
-
-# MySQL
-alias mysql=/usr/local/mysql/bin/mysql
-alias mysqladmin=/usr/local/mysql/bin/mysqladmin
-
-# Clang-Format alias
 alias clang-format='clang-format -style=file:$CLANG_FORMAT_CONFIG'
 
-# GCC Homebrew
-alias gcc='gcc-15'
-
-# LLDB
-alias lldb='/usr/bin/lldb'
+# --- Alias Specifici per OS ---
+if [[ "$OS_TYPE" == 'macOS' ]]; then
+  alias compile="clang++ -std=c++20 -O3 -march=native -flto=thin -ffast-math -I/usr/local/include"
+  alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+  alias mysql=/usr/local/mysql/bin/mysql
+  alias mysqladmin=/usr/local/mysql/bin/mysqladmin
+  alias gcc='gcc-15' # Usa gcc di Homebrew
+  alias lldb='/usr/bin/lldb'
+elif [[ "$OS_TYPE" == 'Linux' ]]; then
+  alias compile="g++ -std=c++20 -O3 -march=native -flto -ffast-math"
+  alias gcc='gcc'
+  alias lldb='lldb'
+fi
 
 # =========================================================================== #
-
