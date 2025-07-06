@@ -209,53 +209,61 @@ fi
 export GOROOT=/usr/local/go
 export GOPATH=$HOME/00_ENV/go
 
-# ------------ Java - Impostazione Dinamica di JAVA_HOME ------------ #
-setup_java_home() {
-  if [[ "$OS_TYPE" == 'macOS' ]]; then
-    # Su macOS, usiamo l'utility fornita dal sistema
-    if [ -x "/usr/libexec/java_home" ]; then
-      export JAVA_HOME=$(/usr/libexec/java_home)
-      # Aggiungiamo anche il bin di JAVA_HOME al PATH per coerenza
-      export PATH="$JAVA_HOME/bin:$PATH"
-    fi
-  elif [[ "$OS_TYPE" == 'Linux' ]]; then
-    # Metodo 1: Per sistemi basati su Debian/Ubuntu (usa update-alternatives)
-    if command -v update-alternatives &>/dev/null; then
-      # Troviamo il percorso reale dell'eseguibile java, seguendo i link simbolici
-      local java_path=$(readlink -f $(which java))
-      if [[ -n "$java_path" ]]; then
-        # Il JAVA_HOME è la directory genitore della directory 'bin'
-        export JAVA_HOME="${java_path%/bin/java}"
+# ------------ Java - Gestione Intelligente di JAVA_HOME ------------ #
+
+# Prima di tutto, diamo priorità a SDKMAN! se è installato.
+if [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
+  # SDKMAN! trovato. Lasciamo che gestisca tutto.
+  export SDKMAN_DIR="$HOME/.sdkman"
+  source "$HOME/.sdkman/bin/sdkman-init.sh"
+else
+  # SDKMAN! non trovato. Usiamo la nostra logica di fallback per auto-rilevare Java.
+
+  setup_java_home_fallback() {
+    if [[ "$OS_TYPE" == 'macOS' ]]; then
+      # Su macOS, usiamo l'utility fornita dal sistema
+      if [ -x "/usr/libexec/java_home" ]; then
+        export JAVA_HOME=$(/usr/libexec/java_home)
+        export PATH="$JAVA_HOME/bin:$PATH"
+      fi
+    elif [[ "$OS_TYPE" == 'Linux' ]]; then
+      local found_java_home=""
+
+      # Metodo 1: Per sistemi basati su Debian/Ubuntu/Fedora (usa update-alternatives)
+      if command -v update-alternatives &>/dev/null && command -v java &>/dev/null; then
+        local java_path=$(readlink -f $(which java))
+        if [[ -n "$java_path" ]]; then
+          found_java_home="${java_path%/bin/java}"
+        fi
+      fi
+
+      # Metodo 2: Per sistemi Arch Linux (usa archlinux-java)
+      if [[ -z "$found_java_home" ]] && command -v archlinux-java &>/dev/null; then
+          local java_env=$(archlinux-java get)
+          if [[ -n "$java_env" ]]; then
+              found_java_home="/usr/lib/jvm/$java_env"
+          fi
+      fi
+
+      # Metodo 3: Fallback generico cercando in /usr/lib/jvm
+      if [[ -z "$found_java_home" ]] && [[ -d "/usr/lib/jvm" ]]; then
+          found_java_home=$(find /usr/lib/jvm -maxdepth 1 -type d -name "java-*-openjdk*" | sort -V | tail -n 1)
+      fi
+      
+      # Esporta le variabili solo se abbiamo trovato un percorso valido
+      if [[ -n "$found_java_home" && -d "$found_java_home" ]]; then
+        export JAVA_HOME="$found_java_home"
+        export PATH="$JAVA_HOME/bin:$PATH"
+      else
+        echo "⚠️  Attenzione: Impossibile determinare JAVA_HOME automaticamente e SDKMAN! non è installato."
+        echo "    Per favore, installa Java e/o SDKMAN!, o imposta JAVA_HOME manualmente."
       fi
     fi
+  }
 
-    # Metodo 2: Per sistemi Arch Linux (usa archlinux-java)
-    if [[ -z "$JAVA_HOME" ]] && command -v archlinux-java &>/dev/null; then
-        local java_env=$(archlinux-java get)
-        if [[ -n "$java_env" ]]; then
-            export JAVA_HOME="/usr/lib/jvm/$java_env"
-        fi
-    fi
-
-    # Metodo 3: Fallback generico cercando in /usr/lib/jvm
-    if [[ -z "$JAVA_HOME" ]] && [[ -d "/usr/lib/jvm" ]]; then
-        # Cerca la versione più recente di openjdk come fallback
-        export JAVA_HOME=$(find /usr/lib/jvm -maxdepth 1 -type d -name "java-*-openjdk*" | sort -V | tail -n 1)
-    fi
-    
-    # Se dopo tutti i tentativi JAVA_HOME è ancora vuoto, avvisiamo l'utente.
-    if [[ -z "$JAVA_HOME" || ! -d "$JAVA_HOME" ]]; then
-      echo "⚠️  Attenzione: Impossibile determinare JAVA_HOME automaticamente."
-      echo "    Per favore, impostalo manualmente nel tuo zshrc."
-      # Esempio: export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-    else
-        export PATH="$JAVA_HOME/bin:$PATH"
-    fi
-  fi
-}
-
-# Esegui la funzione per configurare l'ambiente Java
-setup_java_home
+  # Esegui la funzione di fallback
+  setup_java_home_fallback
+fi
 
 # Android ADB (il percorso potrebbe variare su Linux)
 export ANDROID_HOME="$HOME/Library/Android/Sdk" # macOS
@@ -455,3 +463,7 @@ elif [[ "$OS_TYPE" == 'Linux' ]]; then
 fi
 
 # =========================================================================== #
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
