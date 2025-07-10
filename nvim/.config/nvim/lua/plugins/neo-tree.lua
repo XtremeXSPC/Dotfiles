@@ -1,4 +1,4 @@
--- File: lua/plugins/neo-tree.lua (Versione Corretta e Verificata)
+-- File: lua/plugins/neo-tree.lua
 
 return {
   "nvim-neo-tree/neo-tree.nvim",
@@ -9,7 +9,7 @@ return {
     "MunifTanjim/nui.nvim",
   },
   opts = {
-    close_if_last_window = true, -- Chiude neo-tree se è l'ultima finestra
+    close_if_last_window = true,
     popup_border_style = "rounded",
     enable_git_status = true,
     enable_diagnostics = true,
@@ -46,7 +46,7 @@ return {
         ["gr"] = "git_revert_file",
         ["gc"] = "git_commit",
         ["gp"] = "git_push",
-        ["gg"] = "git_pull",
+        ["gg"] = "refresh",
       },
     },
 

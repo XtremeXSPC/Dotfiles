@@ -5,7 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 
-// Costanti per maggiore chiarezza
+// Constants for better clarity
 static const int MENU_BAR_LAYER           = 0x19;
 static const int MAIN_DISPLAY             = 0;
 static const int MAX_BUFFER_SIZE          = 512;
@@ -13,9 +13,9 @@ static const int MAX_NAME_BUFFER          = 256;
 static const int CLICK_DELAY_MICROSECONDS = 150000; // 150ms
 
 /**
- * Inizializza l'accesso alle API di accessibilità
+ * Initializes accessibility API access
  *
- * @return true se l'inizializzazione ha successo, false altrimenti
+ * @return true if initialization succeeds, false otherwise
  */
 [[nodiscard]] static bool ax_init() {
   const void* keys[]   = {kAXTrustedCheckOptionPrompt};
@@ -26,7 +26,7 @@ static const int CLICK_DELAY_MICROSECONDS = 150000; // 150ms
       &kCFTypeDictionaryValueCallBacks);
 
   if (!options) {
-    fprintf(stderr, "Errore nella creazione del dizionario opzioni\n");
+    fprintf(stderr, "Error creating options dictionary\n");
     return false;
   }
 
@@ -34,7 +34,7 @@ static const int CLICK_DELAY_MICROSECONDS = 150000; // 150ms
   CFRelease(options);
 
   if (!trusted) {
-    fprintf(stderr, "Permessi di accessibilità non concessi\n");
+    fprintf(stderr, "Accessibility permissions not granted\n");
     return false;
   }
 
@@ -42,27 +42,27 @@ static const int CLICK_DELAY_MICROSECONDS = 150000; // 150ms
 }
 
 /**
- * Esegue un click su un elemento UI
+ * Performs a click on a UI element
  *
- * @param element Elemento su cui eseguire il click
+ * @param element Element to click on
  */
 static void ax_perform_click(AXUIElementRef element) {
   if (!element)
     return;
 
-  // Prima cancella qualsiasi azione in corso
+  // First cancel any ongoing action
   AXUIElementPerformAction(element, kAXCancelAction);
   usleep(CLICK_DELAY_MICROSECONDS);
 
-  // Poi esegue l'azione di pressione
+  // Then perform the press action
   AXUIElementPerformAction(element, kAXPressAction);
 }
 
 /**
- * Ottiene il titolo di un elemento UI
+ * Gets the title of a UI element
  *
- * @param element Elemento di cui ottenere il titolo
- * @return Il titolo dell'elemento, o NULL in caso di errore
+ * @param element Element to get the title from
+ * @return The element's title, or NULL on error
  */
 [[nodiscard]] static CFStringRef ax_get_title(AXUIElementRef element) {
   if (!element)
@@ -77,10 +77,10 @@ static void ax_perform_click(AXUIElementRef element) {
 }
 
 /**
- * Seleziona un'opzione da un menu per ID
+ * Selects a menu option by ID
  *
- * @param app Applicazione contenente il menu
- * @param id ID dell'opzione da selezionare
+ * @param app Application containing the menu
+ * @param id ID of the option to select
  */
 static void ax_select_menu_option(AXUIElementRef app, int id) {
   if (!app || id < 0)
@@ -107,9 +107,9 @@ static void ax_select_menu_option(AXUIElementRef app, int id) {
 }
 
 /**
- * Stampa le opzioni di menu disponibili
+ * Prints available menu options
  *
- * @param app Applicazione contenente il menu
+ * @param app Application containing the menu
  */
 static void ax_print_menu_options(AXUIElementRef app) {
   if (!app)
@@ -133,7 +133,7 @@ static void ax_print_menu_options(AXUIElementRef app) {
         if (title) {
           CFIndex title_length = CFStringGetLength(title);
           if (title_length > 0) {
-            // Allocazione sicura del buffer per la stringa
+            // Safe buffer allocation for the string
             CFIndex buffer_size = CFStringGetMaximumSizeForEncoding(title_length, kCFStringEncodingUTF8) + 1;
             char*   buffer      = (char*)malloc(buffer_size);
 
@@ -154,10 +154,10 @@ static void ax_print_menu_options(AXUIElementRef app) {
 }
 
 /**
- * Ottiene un item del menu extra (icone nella menubar di sistema)
+ * Gets an extra menu item (icons in the system menubar)
  *
- * @param alias Alias dell'applicazione,finestra
- * @return L'elemento UI corrispondente, o NULL in caso di errore
+ * @param alias Application,window alias
+ * @return The corresponding UI element, or NULL on error
  */
 [[nodiscard]] static AXUIElementRef ax_get_extra_menu_item(const char* alias) {
   if (!alias)
@@ -168,7 +168,7 @@ static void ax_print_menu_options(AXUIElementRef app) {
   CFArrayRef window_list = CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID);
 
   if (!window_list) {
-    fprintf(stderr, "Impossibile ottenere la lista delle finestre\n");
+    fprintf(stderr, "Unable to get window list\n");
     return NULL;
   }
 
@@ -264,7 +264,7 @@ static void ax_print_menu_options(AXUIElementRef app) {
         CFRelease(position_ref);
         CFRelease(size_ref);
 
-        // Tolleranza di 10 punti per il posizionamento
+        // 10 point tolerance for positioning
         static const CGFloat POSITION_TOLERANCE = 10.0;
         if (fabs(position.x - bounds.origin.x) <= POSITION_TOLERANCE) {
           result = (AXUIElementRef)CFRetain(item);
@@ -280,15 +280,15 @@ static void ax_print_menu_options(AXUIElementRef app) {
   return result;
 }
 
-// Dichiarazioni delle funzioni SkyLight
+// SkyLight function declarations
 extern int  SLSMainConnectionID();
 extern void SLSSetMenuBarVisibilityOverrideOnDisplay(int cid, int did, bool enabled);
 extern void SLSSetMenuBarInsetAndAlpha(int cid, double u1, double u2, float alpha);
 
 /**
- * Seleziona un item dal menu extra
+ * Selects an item from the extra menu
  *
- * @param alias Alias dell'applicazione,finestra
+ * @param alias Application,window alias
  */
 static void ax_select_menu_extra(const char* alias) {
   if (!alias)
@@ -296,36 +296,36 @@ static void ax_select_menu_extra(const char* alias) {
 
   AXUIElementRef item = ax_get_extra_menu_item(alias);
   if (!item) {
-    fprintf(stderr, "Impossibile trovare il menu item: %s\n", alias);
+    fprintf(stderr, "Unable to find menu item: %s\n", alias);
     return;
   }
 
   int connection_id = SLSMainConnectionID();
 
-  // Nasconde temporaneamente la menubar
+  // Temporarily hide the menubar
   SLSSetMenuBarInsetAndAlpha(connection_id, 0, 1, 0.0);
   SLSSetMenuBarVisibilityOverrideOnDisplay(connection_id, MAIN_DISPLAY, true);
   SLSSetMenuBarInsetAndAlpha(connection_id, 0, 1, 0.0);
 
-  // Esegue il click sull'elemento
+  // Perform the click on the element
   ax_perform_click(item);
 
-  // Ripristina la menubar
+  // Restore the menubar
   SLSSetMenuBarVisibilityOverrideOnDisplay(connection_id, MAIN_DISPLAY, false);
   SLSSetMenuBarInsetAndAlpha(connection_id, 0, 1, 1.0);
 
   CFRelease(item);
 }
 
-// Dichiarazioni delle funzioni per Process Serial Number
+// Process Serial Number function declarations
 extern void _SLPSGetFrontProcess(ProcessSerialNumber* psn);
 extern void SLSGetConnectionIDForPSN(int cid, ProcessSerialNumber* psn, int* cid_out);
 extern void SLSConnectionGetPID(int cid, pid_t* pid_out);
 
 /**
- * Ottiene l'applicazione in primo piano
+ * Gets the frontmost application
  *
- * @return L'elemento UI dell'applicazione in primo piano, o NULL in caso di errore
+ * @return The UI element of the frontmost application, or NULL on error
  */
 [[nodiscard]] static AXUIElementRef ax_get_front_app() {
   ProcessSerialNumber psn = {0};
@@ -339,7 +339,7 @@ extern void SLSConnectionGetPID(int cid, pid_t* pid_out);
   SLSConnectionGetPID(target_cid, &pid);
 
   if (pid == 0) {
-    fprintf(stderr, "Impossibile ottenere il PID dell'applicazione in primo piano\n");
+    fprintf(stderr, "Unable to get PID of frontmost application\n");
     return NULL;
   }
 
@@ -347,17 +347,17 @@ extern void SLSConnectionGetPID(int cid, pid_t* pid_out);
 }
 
 /**
- * Mostra l'uso del programma
+ * Shows program usage
  */
 static void show_usage(const char* program_name) {
   if (!program_name)
     program_name = "menus";
   printf("Usage: %s [-l | -s id/alias ]\n", program_name);
-  printf("  -l: Lista le opzioni di menu nell'app in primo piano\n");
-  printf("  -s id: Seleziona l'opzione di menu con ID specificato\n");
+  printf("  -l: List menu options in the frontmost app\n");
+  printf("  -s id: Select menu option with specified ID\n");
   printf(
-      "  -s alias: Seleziona l'opzione di menu extra con alias specificato (formato: "
-      "'app,nome')\n");
+      "  -s alias: Select extra menu option with specified alias (format: "
+      "'app,name')\n");
 }
 
 int main(int argc, char** argv) {
@@ -367,14 +367,14 @@ int main(int argc, char** argv) {
   }
 
   if (!ax_init()) {
-    fprintf(stderr, "Errore nell'inizializzazione delle API di accessibilità\n");
+    fprintf(stderr, "Error initializing accessibility APIs\n");
     return 1;
   }
 
   if (strcmp(argv[1], "-l") == 0) {
     AXUIElementRef app = ax_get_front_app();
     if (!app) {
-      fprintf(stderr, "Impossibile ottenere l'applicazione in primo piano\n");
+      fprintf(stderr, "Unable to get frontmost application\n");
       return 1;
     }
     ax_print_menu_options(app);
@@ -382,16 +382,16 @@ int main(int argc, char** argv) {
   } else if (argc == 3 && strcmp(argv[1], "-s") == 0) {
     int id = 0;
     if (sscanf(argv[2], "%d", &id) == 1) {
-      // Seleziona per ID numerico
+      // Select by numeric ID
       AXUIElementRef app = ax_get_front_app();
       if (!app) {
-        fprintf(stderr, "Impossibile ottenere l'applicazione in primo piano\n");
+        fprintf(stderr, "Unable to get frontmost application\n");
         return 1;
       }
       ax_select_menu_option(app, id);
       CFRelease(app);
     } else {
-      // Seleziona per alias
+      // Select by alias
       ax_select_menu_extra(argv[2]);
     }
   } else {

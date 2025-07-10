@@ -1,5 +1,6 @@
 lastupdatecheck: 0
 recentrepos:
+    - /Volumes/LCS.Data/C-Projects
     - /Users/lcs-dev/Dotfiles
     - /Users/lcs-dev/LCS.Data/ING-S/Prog-Scacchi_Knuth
     - /Volumes/LCS.Data/ING-S/Prog-Scacchi_Knuth
@@ -7,7 +8,7 @@ recentrepos:
     - /Volumes/LCS.Data/Dev-Projects
     - /Volumes/LCS.Data/Blog
 startuppopupversion: 5
-lastversion: 0.52.0
+lastversion: 0.53.0
 customcommandshistory:
     - q
 hidecommandlog: false
